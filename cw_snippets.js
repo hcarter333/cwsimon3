@@ -1,6 +1,7 @@
 
 
 let UNIT_MS = 150; // 150ms ~ 8 WPM dot
+let WORD_GAP_MS = 7 * UNIT_MS; // default word gap = 7 units (1050ms at 8 WPM)
 
 // Use the authoritative MORSE_TABLE from simon-game-logic.js when available,
 // otherwise fall back to a local copy so this file remains standalone.
@@ -34,8 +35,8 @@ async function sendMorseMessage(freqStr, text) {
     const ch = upper[ci];
 
     if (ch === " ") {
-      // Word gap: 7 units of silence
-      await sleep(unit * 7);
+      // Word gap: use configurable WORD_GAP_MS
+      await sleep(WORD_GAP_MS);
       continue;
     }
 

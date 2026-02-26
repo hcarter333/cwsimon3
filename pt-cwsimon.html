@@ -136,6 +136,44 @@
         margin-top: 0;
         font-size: 1.3rem;
       }
+
+      .speed-control {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #333;
+      }
+
+      .speed-control label {
+        flex: 1;
+        font-size: 0.95rem;
+      }
+
+      .speed-control .ctrl-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .speed-control button {
+        width: 36px;
+        height: 36px;
+        font-size: 1.2rem;
+        background: #333;
+        color: #fff;
+        border: 1px solid #555;
+        border-radius: 4px;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      .speed-control .value-display {
+        min-width: 60px;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
     </style>
   </head>
   <body>
@@ -169,7 +207,24 @@
       <button id="settingsCloseBtn" type="button" aria-label="Close settings">&#10005;</button>
       <div id="settingsPanelContent">
         <h2>Settings</h2>
-        <!-- Speed controls and mute toggle will be added here -->
+
+        <div class="speed-control">
+          <label>WPM</label>
+          <div class="ctrl-group">
+            <button id="wpmMinusBtn" type="button" aria-label="Decrease WPM">&minus;</button>
+            <span id="wpmDisplay" class="value-display">8</span>
+            <button id="wpmPlusBtn" type="button" aria-label="Increase WPM">+</button>
+          </div>
+        </div>
+
+        <div class="speed-control">
+          <label>Word Gap (ms)</label>
+          <div class="ctrl-group">
+            <button id="wordGapMinusBtn" type="button" aria-label="Decrease word gap">&minus;</button>
+            <span id="wordGapDisplay" class="value-display">1050</span>
+            <button id="wordGapPlusBtn" type="button" aria-label="Increase word gap">+</button>
+          </div>
+        </div>
       </div>
     </div>
 

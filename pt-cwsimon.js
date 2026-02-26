@@ -547,6 +547,46 @@ document.addEventListener("DOMContentLoaded", () => {
       settingsPanel.classList.remove("open");
     });
   }
+
+  // --- Speed Controls ---
+  function updateSpeedDisplays() {
+    const wpmDisplay = document.getElementById("wpmDisplay");
+    const wordGapDisplay = document.getElementById("wordGapDisplay");
+    if (wpmDisplay) wpmDisplay.textContent = (1200 / UNIT_MS).toFixed(1);
+    if (wordGapDisplay) wordGapDisplay.textContent = WORD_GAP_MS;
+  }
+
+  updateSpeedDisplays();
+
+  const wpmPlusBtn = document.getElementById("wpmPlusBtn");
+  const wpmMinusBtn = document.getElementById("wpmMinusBtn");
+  const wordGapPlusBtn = document.getElementById("wordGapPlusBtn");
+  const wordGapMinusBtn = document.getElementById("wordGapMinusBtn");
+
+  if (wpmPlusBtn) {
+    wpmPlusBtn.addEventListener("click", () => {
+      UNIT_MS = Math.max(10, UNIT_MS - 5);
+      updateSpeedDisplays();
+    });
+  }
+  if (wpmMinusBtn) {
+    wpmMinusBtn.addEventListener("click", () => {
+      UNIT_MS = UNIT_MS + 5;
+      updateSpeedDisplays();
+    });
+  }
+  if (wordGapPlusBtn) {
+    wordGapPlusBtn.addEventListener("click", () => {
+      WORD_GAP_MS = WORD_GAP_MS + 5;
+      updateSpeedDisplays();
+    });
+  }
+  if (wordGapMinusBtn) {
+    wordGapMinusBtn.addEventListener("click", () => {
+      WORD_GAP_MS = Math.max(5, WORD_GAP_MS - 5);
+      updateSpeedDisplays();
+    });
+  }
 });
 
 // === Keyer Event Hooks (additive — no core logic changes) ===
