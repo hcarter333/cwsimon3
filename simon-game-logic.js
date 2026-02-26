@@ -93,6 +93,57 @@ var SimonGame = (function () {
     return MORSE_TABLE[ch.toUpperCase()] || null;
   }
 
+  // ── Input decoder (sideId → decoded letters) ─────────────────────
+
+  /**
+   * Create an input decoder that converts sideId-based dit/dah events
+   * into decoded Morse letters.
+   *
+   * Wire to keyer hooks: onKeyerInput → decoder.element,
+   *                      onLetterBoundary → decoder.letterBoundary.
+   *
+   * @param {object} [opts]
+   * @param {function} [opts.onDecode] - Called as onDecode(letter, pattern)
+   *   when a letter boundary fires. `letter` is the decoded character
+   *   (uppercase) or null if the pattern is unrecognised.
+   * @returns {object} Decoder with element(), letterBoundary(), currentPattern(), reset().
+   */
+  function createInputDecoder(opts) {
+    opts = opts || {};
+    var onDecode = opts.onDecode || function () {};
+    var pattern = "";
+
+    return {
+      /** Feed a sideId event from the keyer (1 = dit, 3 = dah). */
+      element: function (sideId) {
+        var s = Number(sideId);
+        if (s === 1) {
+          pattern += ".";
+        } else if (s === 3) {
+          pattern += "-";
+        }
+      },
+
+      /** Signal a letter boundary; decodes accumulated pattern and calls onDecode. */
+      letterBoundary: function () {
+        if (pattern.length === 0) return;
+        var letter = REVERSE_TABLE[pattern] || null;
+        onDecode(letter, pattern);
+        pattern = "";
+      },
+
+      /** Return the current accumulated pattern (for inspection/testing). */
+      currentPattern: function () {
+        return pattern;
+      },
+
+      /** Reset the decoder, discarding any partial pattern. */
+      reset: function () {
+        pattern = "";
+      }
+    };
+  }
+
   // ── Sequence matcher ──────────────────────────────────────────────
 
   /**
@@ -248,6 +299,7 @@ var SimonGame = (function () {
     createState: createState,
     advanceRound: advanceRound,
 
+    createInputDecoder: createInputDecoder,
     decodeMorse: decodeMorse,
     encodeMorse: encodeMorse,
 
