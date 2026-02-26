@@ -25,6 +25,7 @@ let serialPort = null;
 let prevCTS = null;
 let lastElementTouched = null;
 let morsePlaybackActive = false;
+let _simonState = null;
 
 async function ensureAudioReady() {
   if (!note_context) {
@@ -532,7 +533,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const startGameButton = document.getElementById("startGameButton");
   if (startGameButton) {
-    startGameButton.addEventListener("click", playMorseK);
+    startGameButton.addEventListener("click", startGame);
   }
 
   const settingsGearBtn = document.getElementById("settingsGearBtn");
@@ -548,6 +549,80 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// === Simon Game Orchestration =============================================
+
+/**
+ * Play a sequence of characters as Morse sidetone.
+ * Uses playSidetone()/stopSidetone() directly to avoid side effects
+ * from keyPress()/keyRelease() (histograms, keyer hooks, cwmsg).
+ *
+ * @param {string[]} sequence - Array of uppercase characters to play.
+ */
+async function playMorseSequence(sequence) {
+  var unit = UNIT_MS;
+  for (var i = 0; i < sequence.length; i++) {
+    var pattern = SimonGame.encodeMorse(sequence[i]);
+    if (!pattern) continue;
+
+    for (var j = 0; j < pattern.length; j++) {
+      var durUnits = pattern[j] === "." ? 1 : 3;
+      playSidetone();
+      await sleep(durUnits * unit);
+      stopSidetone();
+      // Intra-character gap (between elements within a letter)
+      if (j < pattern.length - 1) {
+        await sleep(unit);
+      }
+    }
+    // Inter-character gap (between letters)
+    if (i < sequence.length - 1) {
+      await sleep(unit * 3);
+    }
+  }
+}
+
+/**
+ * Start a new Simon game.
+ * Initializes game state, chooses the first symbol, and begins playback.
+ */
+async function startGame() {
+  if (morsePlaybackActive) return;
+
+  await ensureAudioReady();
+  _simonState = SimonGame.createState();
+  SimonGame.advanceRound(_simonState);
+  await playRound();
+}
+
+/**
+ * Play the current round's full sequence, then activate input capture.
+ * Replays ALL prior symbols plus the newest one.
+ */
+async function playRound() {
+  morsePlaybackActive = true;
+  setInputCaptureMode(false);
+
+  try {
+    var sequence = SimonGame.getSequence(_simonState);
+    await playMorseSequence(sequence);
+  } finally {
+    morsePlaybackActive = false;
+    stopSidetone();
+  }
+
+  // Hand off to user input
+  setInputCaptureMode(true);
+}
+
+/**
+ * Called when the player successfully matches the full sequence for a round.
+ * Appends a new random symbol and plays the next round.
+ */
+function onRoundComplete() {
+  SimonGame.advanceRound(_simonState);
+  playRound();
+}
 
 // === Keyer Event Hooks (additive — no core logic changes) ===
 //
