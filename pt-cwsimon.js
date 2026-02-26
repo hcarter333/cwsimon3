@@ -537,6 +537,19 @@ document.addEventListener("DOMContentLoaded", () => {
   if (startGameButton) {
     startGameButton.addEventListener("click", playMorseK);
   }
+
+  const settingsGearBtn = document.getElementById("settingsGearBtn");
+  const settingsPanel = document.getElementById("settingsPanel");
+  const settingsCloseBtn = document.getElementById("settingsCloseBtn");
+
+  if (settingsGearBtn && settingsPanel && settingsCloseBtn) {
+    settingsGearBtn.addEventListener("click", () => {
+      settingsPanel.classList.add("open");
+    });
+    settingsCloseBtn.addEventListener("click", () => {
+      settingsPanel.classList.remove("open");
+    });
+  }
 });
 
 // === Keyer Event Hooks (additive — no core logic changes) ===
