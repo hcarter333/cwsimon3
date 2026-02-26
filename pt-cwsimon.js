@@ -585,12 +585,28 @@ document.addEventListener("DOMContentLoaded", () => {
   refreshSpeedDisplay();
 });
 
+// === Letter Overlay ========================================================
+
+function showLetterOverlay(letter) {
+  var el = document.getElementById("morseOverlay");
+  if (!el) return;
+  el.textContent = letter;
+  el.classList.add("visible");
+}
+
+function fadeLetterOverlay() {
+  var el = document.getElementById("morseOverlay");
+  if (!el) return;
+  el.classList.remove("visible");
+}
+
 // === Simon Game Orchestration =============================================
 
 /**
  * Play a sequence of characters as Morse sidetone.
  * Uses playSidetone()/stopSidetone() directly to avoid side effects
  * from keyPress()/keyRelease() (histograms, keyer hooks, cwmsg).
+ * Shows a per-letter overlay that fades when each letter's audio ends.
  *
  * @param {string[]} sequence - Array of uppercase characters to play.
  */
@@ -599,6 +615,8 @@ async function playMorseSequence(sequence) {
   for (var i = 0; i < sequence.length; i++) {
     var pattern = SimonGame.encodeMorse(sequence[i]);
     if (!pattern) continue;
+
+    showLetterOverlay(sequence[i]);
 
     for (var j = 0; j < pattern.length; j++) {
       var durUnits = pattern[j] === "." ? 1 : 3;
@@ -610,6 +628,9 @@ async function playMorseSequence(sequence) {
         await sleep(unit);
       }
     }
+
+    fadeLetterOverlay();
+
     // Inter-character gap (between letters)
     if (i < sequence.length - 1) {
       await sleep(unit * 3);
