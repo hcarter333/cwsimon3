@@ -196,6 +196,44 @@
         opacity: 1;
         transition: none;
       }
+
+      #loseModal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10002;
+        background: rgba(0, 0, 0, 0.85);
+        align-items: center;
+        justify-content: center;
+      }
+
+      #loseModal.visible {
+        display: flex;
+      }
+
+      #loseModalContent {
+        text-align: center;
+        padding: 2rem;
+      }
+
+      #loseModalContent p {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      #loseRestartBtn {
+        font-size: 1.2rem;
+        padding: 0.8rem 2rem;
+        background: #333;
+        color: #fff;
+        border: 1px solid #555;
+        border-radius: 8px;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
     </style>
   </head>
   <body>
@@ -222,6 +260,13 @@
     </div>
 
     <div id="morseOverlay"></div>
+
+    <div id="loseModal">
+      <div id="loseModalContent">
+        <p>You completed <span id="loseRoundsCount">0</span> rounds</p>
+        <button id="loseRestartBtn" type="button">Play Again?</button>
+      </div>
+    </div>
 
     <div id="console" class="console"></div>
 

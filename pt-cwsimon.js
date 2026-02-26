@@ -557,6 +557,14 @@ document.addEventListener("DOMContentLoaded", () => {
     startGameButton.addEventListener("click", startGame);
   }
 
+  // Wire up Simon input decoder and lose-flow restart
+  initSimonInputWiring();
+
+  var restartBtn = document.getElementById("loseRestartBtn");
+  if (restartBtn) {
+    restartBtn.addEventListener("click", restartGame);
+  }
+
   const settingsGearBtn = document.getElementById("settingsGearBtn");
   const settingsPanel = document.getElementById("settingsPanel");
   const settingsCloseBtn = document.getElementById("settingsCloseBtn");
@@ -601,6 +609,72 @@ function fadeLetterOverlay() {
   var el = document.getElementById("morseOverlay");
   if (!el) return;
   el.classList.remove("visible");
+}
+
+// === Lose Flow =============================================================
+
+var _simonDecoder = null;
+
+/**
+ * Wire up keyer hooks to the Simon game matcher (called once at init).
+ * Creates an InputDecoder that accumulates dit/dah elements into letters,
+ * then checks each decoded letter against the expected game sequence.
+ */
+function initSimonInputWiring() {
+  _simonDecoder = SimonGame.createInputDecoder({
+    onDecode: function (letter, pattern) {
+      if (!_simonState || SimonGame.isGameOver(_simonState)) return;
+
+      var result = SimonGame.checkLetter(_simonState, pattern);
+
+      if (result === SimonGame.Result.WRONG) {
+        onGameLose();
+      } else if (result === SimonGame.Result.ROUND_COMPLETE) {
+        onRoundComplete();
+      }
+      // LETTER_CORRECT → wait for next letter
+    }
+  });
+
+  onKeyerInput(function (sideId) {
+    if (_simonDecoder) _simonDecoder.element(sideId);
+  });
+
+  onLetterBoundary(function () {
+    if (_simonDecoder) _simonDecoder.letterBoundary();
+  });
+}
+
+/**
+ * Handle a lost game: stop input, show results modal.
+ */
+function onGameLose() {
+  setInputCaptureMode(false);
+  morsePlaybackActive = false;
+  stopSidetone();
+
+  var score = SimonGame.getScore(_simonState);
+  showLoseModal(score);
+}
+
+function showLoseModal(roundsCompleted) {
+  var modal = document.getElementById("loseModal");
+  if (!modal) return;
+
+  var scoreEl = document.getElementById("loseRoundsCount");
+  if (scoreEl) scoreEl.textContent = roundsCompleted;
+
+  modal.classList.add("visible");
+}
+
+function hideLoseModal() {
+  var modal = document.getElementById("loseModal");
+  if (modal) modal.classList.remove("visible");
+}
+
+function restartGame() {
+  hideLoseModal();
+  startGame();
 }
 
 // === Simon Game Orchestration =============================================
@@ -652,6 +726,9 @@ async function startGame() {
   _simonState = SimonGame.createState();
   if (_simonDecoder) _simonDecoder.reset();
   SimonGame.advanceRound(_simonState);
+
+  if (_simonDecoder) _simonDecoder.reset();
+
   await playRound();
 }
 
