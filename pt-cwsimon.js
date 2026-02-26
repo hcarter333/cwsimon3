@@ -26,6 +26,8 @@ let prevCTS = null;
 let lastElementTouched = null;
 let morsePlaybackActive = false;
 let _simonState = null;
+const LOSE_SOUND_FREQ = 300;
+let loseSoundMuted = false;
 
 async function ensureAudioReady() {
   if (!note_context) {
@@ -592,6 +594,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   refreshSpeedDisplay();
 
+  // Lose-sound mute toggle
+  var loseSoundToggle = document.getElementById("loseSoundToggle");
+  if (loseSoundToggle) {
+    loseSoundToggle.addEventListener("click", function () {
+      loseSoundMuted = !loseSoundMuted;
+      loseSoundToggle.textContent = loseSoundMuted ? "Off" : "On";
+    });
+  }
+
   // Wire Simon input decoder to keyer hooks
   initSimonInputMatcher();
 });
@@ -646,15 +657,34 @@ function initSimonInputWiring() {
 }
 
 /**
- * Handle a lost game: stop input, show results modal.
+ * Handle a lost game: stop input, play lose sound, show results modal.
  */
-function onGameLose() {
+async function onGameLose() {
   setInputCaptureMode(false);
   morsePlaybackActive = false;
   stopSidetone();
 
   var score = SimonGame.getScore(_simonState);
+
+  if (!loseSoundMuted) {
+    await playLoseSound();
+  }
+
   showLoseModal(score);
+}
+
+/**
+ * Play 'HI HI' in Morse at a lower frequency than game playback.
+ */
+async function playLoseSound() {
+  await ensureAudioReady();
+  morsePlaybackActive = true;
+  try {
+    await sendMorseMessage(String(LOSE_SOUND_FREQ), "HI HI");
+  } finally {
+    morsePlaybackActive = false;
+    stopSidetone();
+  }
 }
 
 function showLoseModal(roundsCompleted) {
