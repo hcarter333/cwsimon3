@@ -583,6 +583,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (wordGapMinus) wordGapMinus.addEventListener("click", () => adjustWordGap(-5));
 
   refreshSpeedDisplay();
+
+  // Wire Simon input decoder to keyer hooks
+  initSimonInputMatcher();
 });
 
 // === Letter Overlay ========================================================
@@ -647,6 +650,7 @@ async function startGame() {
 
   await ensureAudioReady();
   _simonState = SimonGame.createState();
+  if (_simonDecoder) _simonDecoder.reset();
   SimonGame.advanceRound(_simonState);
   await playRound();
 }
@@ -668,6 +672,7 @@ async function playRound() {
   }
 
   // Hand off to user input
+  if (_simonDecoder) _simonDecoder.reset();
   setInputCaptureMode(true);
 }
 
@@ -678,6 +683,59 @@ async function playRound() {
 function onRoundComplete() {
   SimonGame.advanceRound(_simonState);
   playRound();
+}
+
+/**
+ * Called when the player enters a wrong letter. Stops the game.
+ * The full lose-flow UI (bead my-8zz) will expand this stub.
+ */
+function onGameOver() {
+  setInputCaptureMode(false);
+  if (_simonDecoder) _simonDecoder.reset();
+  var score = SimonGame.getScore(_simonState);
+  console.log("Game over! Score: " + score + " rounds");
+}
+
+// === Input Matching (decoder → sequence matcher) ============================
+
+var _simonDecoder = null;
+
+/**
+ * Initialise the input decoder and wire it to the keyer event hooks.
+ * Called once on DOMContentLoaded; uses _simonState to gate matching.
+ */
+function initSimonInputMatcher() {
+  _simonDecoder = SimonGame.createInputDecoder({
+    onDecode: function (letter, pattern) {
+      if (!_simonState || SimonGame.isGameOver(_simonState)) return;
+
+      var result = SimonGame.checkLetter(_simonState, pattern);
+
+      if (result === SimonGame.Result.LETTER_CORRECT) {
+        return;
+      }
+
+      if (result === SimonGame.Result.ROUND_COMPLETE) {
+        setInputCaptureMode(false);
+        _simonDecoder.reset();
+        onRoundComplete();
+        return;
+      }
+
+      if (result === SimonGame.Result.WRONG) {
+        onGameOver();
+        return;
+      }
+    }
+  });
+
+  onKeyerInput(function (sideId) {
+    if (_simonDecoder) _simonDecoder.element(sideId);
+  });
+
+  onLetterBoundary(function () {
+    if (_simonDecoder) _simonDecoder.letterBoundary();
+  });
 }
 
 // === Keyer Event Hooks (additive — no core logic changes) ===
