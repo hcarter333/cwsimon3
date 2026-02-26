@@ -1,6 +1,6 @@
 
 
-let UNIT_MS = 80; // 80ms ~ 15 WPM dot
+let UNIT_MS = 150; // 150ms ~ 8 WPM dot
 
 // Use the authoritative MORSE_TABLE from simon-game-logic.js when available,
 // otherwise fall back to a local copy so this file remains standalone.

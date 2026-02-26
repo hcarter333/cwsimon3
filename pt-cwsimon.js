@@ -19,7 +19,6 @@ const FREQUENCY = 440;
 let keydown = 0;
 let dtime = 0;
 let utime = 0;
-let UNIT_MS = 80;
 const IDLE_RESET_MS = 640;
 
 let serialPort = null;
@@ -449,8 +448,6 @@ function control(event) {
 // iambic loop control
 let iambicActive = false;
 let iambicToken = 0;
-// simple sleep
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function startIambic(sideId) {
   iambicActive = true;
