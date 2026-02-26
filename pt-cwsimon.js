@@ -538,3 +538,98 @@ document.addEventListener("DOMContentLoaded", () => {
     startGameButton.addEventListener("click", playMorseK);
   }
 });
+
+// === Keyer Event Hooks (additive — no core logic changes) ===
+//
+// Provides callback registration for the Simon game to observe iambic
+// keyer input without modifying startIambic(), enter(), or leave().
+
+let _keyerInputCallbacks = [];
+let _letterBoundaryCallbacks = [];
+let _inputCaptureMode = false;
+let _currentSideId = null;
+let _letterBoundaryTimer = null;
+
+/**
+ * Register a callback that fires on each dit/dah element.
+ * Callback receives sideId: 1 for dit, 3 for dah.
+ * Only fires when input-capture mode is enabled.
+ */
+function onKeyerInput(callback) {
+  _keyerInputCallbacks.push(callback);
+}
+
+/**
+ * Register a callback that fires when an inter-character gap is detected
+ * (silence longer than 3 * UNIT_MS after the last element).
+ * Only fires when input-capture mode is enabled.
+ */
+function onLetterBoundary(callback) {
+  _letterBoundaryCallbacks.push(callback);
+}
+
+/**
+ * Enable or disable input-capture mode.
+ * Callbacks only fire when capture mode is on.
+ */
+function setInputCaptureMode(enabled) {
+  _inputCaptureMode = !!enabled;
+  if (!enabled) {
+    _currentSideId = null;
+    if (_letterBoundaryTimer) {
+      clearTimeout(_letterBoundaryTimer);
+      _letterBoundaryTimer = null;
+    }
+  }
+}
+
+function _fireKeyerInput(sideId) {
+  if (!_inputCaptureMode) return;
+  for (const cb of _keyerInputCallbacks) {
+    try { cb(sideId); } catch (e) { console.error(e); }
+  }
+}
+
+function _fireLetterBoundary() {
+  if (!_inputCaptureMode) return;
+  for (const cb of _letterBoundaryCallbacks) {
+    try { cb(); } catch (e) { console.error(e); }
+  }
+}
+
+// Wrap enter() to track which paddle (sideId) is active.
+// Original enter() body is called unchanged.
+const _originalEnter = enter;
+enter = function(element) {
+  if (element && (element.id == "1" || element.id == "3")) {
+    _currentSideId = Number(element.id);
+  }
+  return _originalEnter(element);
+};
+
+// Wrap keyRelease() to fire the keyer-input callback after each element
+// and start the letter-boundary timer.
+const _originalKeyRelease = keyRelease;
+keyRelease = function() {
+  _originalKeyRelease();
+  if (_inputCaptureMode && _currentSideId !== null) {
+    _fireKeyerInput(_currentSideId);
+  }
+  if (_inputCaptureMode) {
+    if (_letterBoundaryTimer) clearTimeout(_letterBoundaryTimer);
+    _letterBoundaryTimer = setTimeout(function() {
+      _letterBoundaryTimer = null;
+      _fireLetterBoundary();
+    }, 3 * UNIT_MS);
+  }
+};
+
+// Wrap keyPress() to cancel any pending letter-boundary timer.
+const _originalKeyPress = keyPress;
+keyPress = function() {
+  if (_letterBoundaryTimer) {
+    clearTimeout(_letterBoundaryTimer);
+    _letterBoundaryTimer = null;
+  }
+  return _originalKeyPress();
+};
