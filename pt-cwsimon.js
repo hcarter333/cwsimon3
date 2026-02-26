@@ -404,6 +404,7 @@ function logMessage(message) {
 console.log = logMessage;
 
 function keyPress() {
+  if (morsePlaybackActive) return;
   if (keydown === 0) {
     const now = performance.now();
     if (utime !== 0) {
@@ -424,6 +425,7 @@ function keyPress() {
 }
 
 function keyRelease() {
+  if (morsePlaybackActive) return;
   // Ignore stray releases
   if (keydown === 0) return;
 
