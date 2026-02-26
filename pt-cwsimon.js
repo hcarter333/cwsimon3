@@ -136,6 +136,25 @@ async function playMorseK() {
 
 function gapAdjust(delta) {
   UNIT_MS = Math.max(10, UNIT_MS + delta);
+  refreshSpeedDisplay();
+}
+
+function adjustWpm(direction) {
+  // +1 WPM => UNIT_MS - 5, -1 WPM => UNIT_MS + 5
+  UNIT_MS = Math.max(10, UNIT_MS + direction * -5);
+  refreshSpeedDisplay();
+}
+
+function adjustWordGap(delta) {
+  WORD_GAP_MS = Math.max(0, WORD_GAP_MS + delta);
+  refreshSpeedDisplay();
+}
+
+function refreshSpeedDisplay() {
+  var wpmEl = document.getElementById("wpmValue");
+  var gapEl = document.getElementById("wordGapValue");
+  if (wpmEl) wpmEl.textContent = Math.round(1200 / UNIT_MS);
+  if (gapEl) gapEl.textContent = WORD_GAP_MS;
 }
 
 function drawDtimeHistogram() {
@@ -541,12 +560,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (settingsGearBtn && settingsPanel && settingsCloseBtn) {
     settingsGearBtn.addEventListener("click", () => {
+      refreshSpeedDisplay();
       settingsPanel.classList.add("open");
     });
     settingsCloseBtn.addEventListener("click", () => {
       settingsPanel.classList.remove("open");
     });
   }
+
+  // Speed controls
+  var wpmPlus = document.getElementById("wpmPlus");
+  var wpmMinus = document.getElementById("wpmMinus");
+  var wordGapPlus = document.getElementById("wordGapPlus");
+  var wordGapMinus = document.getElementById("wordGapMinus");
+
+  if (wpmPlus) wpmPlus.addEventListener("click", () => adjustWpm(1));
+  if (wpmMinus) wpmMinus.addEventListener("click", () => adjustWpm(-1));
+  if (wordGapPlus) wordGapPlus.addEventListener("click", () => adjustWordGap(5));
+  if (wordGapMinus) wordGapMinus.addEventListener("click", () => adjustWordGap(-5));
+
+  refreshSpeedDisplay();
 });
 
 // === Keyer Event Hooks (additive — no core logic changes) ===
