@@ -8,7 +8,17 @@ module.exports = defineConfig({
   use: {
     baseURL: "http://localhost:3737",
     headless: true,
+    video: "on",
   },
+  projects: [
+    {
+      name: "chrome",
+      use: {
+        browserName: "chromium",
+        channel: "chrome",
+      },
+    },
+  ],
   webServer: {
     command: "npx serve . -l 3737 --no-clipboard",
     port: 3737,

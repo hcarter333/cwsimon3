@@ -15,7 +15,7 @@ test.use({
   // These three give you “for free” artifacts when a test fails:
   trace: "retain-on-failure",
   screenshot: "only-on-failure",
-  video: "retain-on-failure",
+  video: "on",
 });
 
 test("roundtrip: mute->start->read overlay->send same letter->expect next overlay", async ({ page }, testInfo) => {
