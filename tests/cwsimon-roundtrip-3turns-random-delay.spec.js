@@ -26,6 +26,9 @@ test.use({
 });
 
 test("roundtrip: three turns with random gaps on turn 3", async ({ page }, testInfo) => {
+  // Random gaps can accumulate to >30s for letters with many elements.
+  test.setTimeout(60_000);
+
   // Collect console output so we can attach it on failure.
   const consoleLines = [];
   page.on("console", (msg) => {
@@ -197,9 +200,9 @@ test("roundtrip: three turns with random gaps on turn 3", async ({ page }, testI
         }
       }
 
-      // Wait for the letter boundary timer to fire in the app before
-      // sending the next character in the sequence.
-      await page.waitForTimeout(3 * UNIT_MS + 250);
+      // Brief settle: element-counting fires the letter boundary
+      // synchronously on the last element, so no timer wait needed.
+      await page.waitForTimeout(10);
     }
 
     // Play three turns. Each round replays the full accumulated sequence,

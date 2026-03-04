@@ -801,6 +801,8 @@ let _letterBoundaryCallbacks = [];
 let _inputCaptureMode = false;
 let _currentSideId = null;
 let _letterBoundaryTimer = null;
+let _simonIdleTimer = null;
+const SIMON_IDLE_MS = 2100;
 
 /**
  * Register a callback that fires on each dit/dah element.
@@ -832,6 +834,43 @@ function setInputCaptureMode(enabled) {
       clearTimeout(_letterBoundaryTimer);
       _letterBoundaryTimer = null;
     }
+    _clearSimonIdleTimer();
+  } else {
+    _resetSimonIdleTimer();
+  }
+}
+
+/**
+ * Check if the accumulated element count matches the expected pattern length
+ * for the current Simon letter. If so, auto-fire the letter boundary.
+ */
+function _checkSimonElementCount() {
+  if (!_simonState || SimonGame.isGameOver(_simonState) || !_simonDecoder) return;
+  var expectedChar = _simonState.sequence[_simonState.inputIndex];
+  if (!expectedChar) return;
+  var expectedPattern = SimonGame.encodeMorse(expectedChar);
+  if (!expectedPattern) return;
+  if (_simonDecoder.currentPattern().length >= expectedPattern.length) {
+    _fireLetterBoundary();
+  }
+}
+
+function _resetSimonIdleTimer() {
+  if (_simonIdleTimer) clearTimeout(_simonIdleTimer);
+  _simonIdleTimer = null;
+  if (!_inputCaptureMode || !_simonState || SimonGame.isGameOver(_simonState)) return;
+  _simonIdleTimer = setTimeout(function() {
+    _simonIdleTimer = null;
+    if (_inputCaptureMode && _simonState && !SimonGame.isGameOver(_simonState)) {
+      onGameLose();
+    }
+  }, SIMON_IDLE_MS);
+}
+
+function _clearSimonIdleTimer() {
+  if (_simonIdleTimer) {
+    clearTimeout(_simonIdleTimer);
+    _simonIdleTimer = null;
   }
 }
 
@@ -859,8 +898,9 @@ enter = function(element) {
   return _originalEnter(element);
 };
 
-// Wrap keyRelease() to fire the keyer-input callback after each element
-// and start the letter-boundary timer.
+// Wrap keyRelease() to fire the keyer-input callback after each element.
+// In Simon game mode, use element-counting to detect letter boundaries
+// instead of the 3*UNIT_MS timer (which causes false losses on slow gaps).
 const _originalKeyRelease = keyRelease;
 keyRelease = function() {
   _originalKeyRelease();
@@ -869,19 +909,32 @@ keyRelease = function() {
   }
   if (_inputCaptureMode) {
     if (_letterBoundaryTimer) clearTimeout(_letterBoundaryTimer);
-    _letterBoundaryTimer = setTimeout(function() {
-      _letterBoundaryTimer = null;
-      _fireLetterBoundary();
-    }, 3 * UNIT_MS);
+    _letterBoundaryTimer = null;
+
+    if (_simonState && !SimonGame.isGameOver(_simonState)) {
+      // Simon game mode: auto-fire boundary when element count matches expected
+      _checkSimonElementCount();
+      _resetSimonIdleTimer();
+    } else {
+      // Non-Simon mode: use traditional timer-based boundary detection
+      _letterBoundaryTimer = setTimeout(function() {
+        _letterBoundaryTimer = null;
+        _fireLetterBoundary();
+      }, 3 * UNIT_MS);
+    }
   }
 };
 
-// Wrap keyPress() to cancel any pending letter-boundary timer.
+// Wrap keyPress() to cancel any pending letter-boundary timer
+// and reset the Simon idle timer (user is active).
 const _originalKeyPress = keyPress;
 keyPress = function() {
   if (_letterBoundaryTimer) {
     clearTimeout(_letterBoundaryTimer);
     _letterBoundaryTimer = null;
+  }
+  if (_inputCaptureMode && _simonState && !SimonGame.isGameOver(_simonState)) {
+    _resetSimonIdleTimer();
   }
   return _originalKeyPress();
 };
