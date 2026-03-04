@@ -706,6 +706,27 @@ function showLoseModal(roundsCompleted) {
   var scoreEl = document.getElementById("loseRoundsCount");
   if (scoreEl) scoreEl.textContent = roundsCompleted;
 
+  // Build progress display from the current round's sequence
+  var progressMsg = document.getElementById("loseProgressMsg");
+  var progressSeq = document.getElementById("loseProgressSeq");
+  if (progressMsg && progressSeq && _simonState) {
+    var matched = _simonState.inputIndex;
+    var seq = _simonState.sequence;
+
+    progressMsg.textContent = "\uD83D\uDCE1 Signal lost after " + matched + " copies!";
+
+    var display = "";
+    for (var i = 0; i < seq.length; i++) {
+      if (i < matched) {
+        display += seq[i];
+      } else if (i === matched) {
+        display += "\u274C";
+        break;
+      }
+    }
+    progressSeq.textContent = display;
+  }
+
   modal.classList.add("visible");
 }
 
