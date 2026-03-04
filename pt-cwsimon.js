@@ -483,7 +483,24 @@ async function startIambic(sideId) {
     keyPress();
     await sleep(toneUnits * UNIT_MS); // tone duration
     keyRelease();
+
+    // Record element at the source — sideId is stable here (function param),
+    // unlike _currentSideId which could go stale during leave()/enter().
+    if (_inputCaptureMode && _simonDecoder) {
+      _simonDecoder.element(Number(sideId));
+      if (_simonState && !SimonGame.isGameOver(_simonState)) {
+        _checkSimonElementCount();
+      }
+    }
+
     await sleep(UNIT_MS); // inter-element gap
+
+    // Reset idle timer after the gap so the full SIMON_IDLE_MS window
+    // is available from this point for the next element to start.
+    if (_inputCaptureMode && _simonState && !SimonGame.isGameOver(_simonState)) {
+      _resetSimonIdleTimer();
+    }
+
     if (!iambicActive || myToken !== iambicToken) break;
   }
 }
@@ -646,10 +663,6 @@ function initSimonInputWiring() {
     }
   });
 
-  onKeyerInput(function (sideId) {
-    if (_simonDecoder) _simonDecoder.element(sideId);
-  });
-
   onLetterBoundary(function () {
     if (_simonDecoder) _simonDecoder.letterBoundary();
   });
@@ -791,27 +804,16 @@ function onRoundComplete() {
   playRound();
 }
 
-// === Keyer Event Hooks (additive — no core logic changes) ===
+// === Keyer Event Hooks ===
 //
-// Provides callback registration for the Simon game to observe iambic
-// keyer input without modifying startIambic(), enter(), or leave().
+// Simon element recording is done directly in startIambic() where sideId
+// is stable. Letter boundary callbacks are used by the Simon decoder.
 
-let _keyerInputCallbacks = [];
 let _letterBoundaryCallbacks = [];
 let _inputCaptureMode = false;
-let _currentSideId = null;
 let _letterBoundaryTimer = null;
 let _simonIdleTimer = null;
 const SIMON_IDLE_MS = 2100;
-
-/**
- * Register a callback that fires on each dit/dah element.
- * Callback receives sideId: 1 for dit, 3 for dah.
- * Only fires when input-capture mode is enabled.
- */
-function onKeyerInput(callback) {
-  _keyerInputCallbacks.push(callback);
-}
 
 /**
  * Register a callback that fires when an inter-character gap is detected
@@ -829,7 +831,6 @@ function onLetterBoundary(callback) {
 function setInputCaptureMode(enabled) {
   _inputCaptureMode = !!enabled;
   if (!enabled) {
-    _currentSideId = null;
     if (_letterBoundaryTimer) {
       clearTimeout(_letterBoundaryTimer);
       _letterBoundaryTimer = null;
@@ -874,13 +875,6 @@ function _clearSimonIdleTimer() {
   }
 }
 
-function _fireKeyerInput(sideId) {
-  if (!_inputCaptureMode) return;
-  for (const cb of _keyerInputCallbacks) {
-    try { cb(sideId); } catch (e) { console.error(e); }
-  }
-}
-
 function _fireLetterBoundary() {
   if (!_inputCaptureMode) return;
   for (const cb of _letterBoundaryCallbacks) {
@@ -888,34 +882,17 @@ function _fireLetterBoundary() {
   }
 }
 
-// Wrap enter() to track which paddle (sideId) is active.
-// Original enter() body is called unchanged.
-const _originalEnter = enter;
-enter = function(element) {
-  if (element && (element.id == "1" || element.id == "3")) {
-    _currentSideId = Number(element.id);
-  }
-  return _originalEnter(element);
-};
-
-// Wrap keyRelease() to fire the keyer-input callback after each element.
-// In Simon game mode, use element-counting to detect letter boundaries
-// instead of the 3*UNIT_MS timer (which causes false losses on slow gaps).
+// Wrap keyRelease() to handle non-Simon letter-boundary detection.
+// Simon element recording now happens in startIambic() at the source.
+// This wrapper only handles non-Simon timer-based letter boundaries.
 const _originalKeyRelease = keyRelease;
 keyRelease = function() {
   _originalKeyRelease();
-  if (_inputCaptureMode && _currentSideId !== null) {
-    _fireKeyerInput(_currentSideId);
-  }
   if (_inputCaptureMode) {
     if (_letterBoundaryTimer) clearTimeout(_letterBoundaryTimer);
     _letterBoundaryTimer = null;
 
-    if (_simonState && !SimonGame.isGameOver(_simonState)) {
-      // Simon game mode: auto-fire boundary when element count matches expected
-      _checkSimonElementCount();
-      _resetSimonIdleTimer();
-    } else {
+    if (!_simonState || SimonGame.isGameOver(_simonState)) {
       // Non-Simon mode: use traditional timer-based boundary detection
       _letterBoundaryTimer = setTimeout(function() {
         _letterBoundaryTimer = null;
