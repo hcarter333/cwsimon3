@@ -1,11 +1,9 @@
 // @ts-check
 const { test, expect } = require("@playwright/test");
 
-// Your app uses UNIT_MS=150 by default.
-const UNIT_MS = 150;
-
 // Hold times tuned to generate exactly ONE element per press.
 // (Long enough to classify dot/dash, short enough to avoid a second element.)
+const UNIT_MS = 150;
 const DOT_HOLD_MS = UNIT_MS + 60;
 const DASH_HOLD_MS = 3 * UNIT_MS + 60;
 
@@ -180,9 +178,9 @@ test("roundtrip: three turns", async ({ page }, testInfo) => {
         }
       }
 
-      // Wait for the letter boundary timer to fire in the app before
-      // sending the next character in the sequence.
-      await page.waitForTimeout(3 * UNIT_MS + 250);
+      // Brief settle: element-counting fires the letter boundary
+      // synchronously on the last element, so no timer wait needed.
+      await page.waitForTimeout(10);
     }
 
     // Play three turns. Each round replays the full accumulated sequence,

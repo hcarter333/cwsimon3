@@ -1,11 +1,9 @@
 // @ts-check
 const { test, expect } = require("@playwright/test");
 
-// Your app uses UNIT_MS=150 by default.
-const UNIT_MS = 150;
-
 // Hold times tuned to generate exactly ONE element per press.
 // (Long enough to classify dot/dash, short enough to avoid a second element.)
+const UNIT_MS = 150;
 const DOT_HOLD_MS = UNIT_MS + 60;
 const DASH_HOLD_MS = 3 * UNIT_MS + 60;
 
@@ -89,12 +87,40 @@ test("roundtrip: mute->start->read overlay->send same letter->expect next overla
 
     // 2) waits for the first letter to appear and then fade on the overlay panel
     const overlay = page.locator("#morseOverlay");
-    await expect(overlay).toHaveClass(/visible/, { timeout: 5000 });
+
+    async function waitForOverlayVisible() {
+      await page.waitForFunction(
+        () => {
+          const el = document.getElementById("morseOverlay");
+          if (!el) return false;
+
+          const text = el.innerText.trim();
+          const opacity = Number(window.getComputedStyle(el).opacity);
+          return el.classList.contains("visible") && opacity >= 0.99 && /^[A-Z0-9]$/.test(text);
+        },
+        { timeout: 6000 }
+      );
+    }
+
+    async function waitForOverlayFullyFaded() {
+      await page.waitForFunction(
+        () => {
+          const el = document.getElementById("morseOverlay");
+          if (!el) return false;
+
+          const opacity = Number(window.getComputedStyle(el).opacity);
+          return !el.classList.contains("visible") && opacity <= 0.01;
+        },
+        { timeout: 6000 }
+      );
+    }
+
+    await waitForOverlayVisible();
 
     firstLetter = (await overlay.innerText()).trim();
     expect(firstLetter).toMatch(/^[A-Z0-9]$/);
 
-    await expect(overlay).not.toHaveClass(/visible/, { timeout: 5000 });
+    await waitForOverlayFullyFaded();
 
     // Compute the Morse pattern in-page using your SimonGame module
     pattern = await page.evaluate((letter) => {
@@ -142,11 +168,12 @@ test("roundtrip: mute->start->read overlay->send same letter->expect next overla
       }
     }
 
-    // Wait for the letter boundary timer to fire in the app
-    await page.waitForTimeout(3 * UNIT_MS + 250);
+    // Brief settle: element-counting fires the letter boundary
+    // synchronously on the last element, so no timer wait needed.
+    await page.waitForTimeout(10);
 
     // 4) Fail if a new letter overlay doesn't appear
-    await expect(overlay).toHaveClass(/visible/, { timeout: 6000 });
+    await waitForOverlayVisible();
     nextOverlayText = (await overlay.innerText()).trim();
     expect(nextOverlayText).toMatch(/^[A-Z0-9]$/);
 
