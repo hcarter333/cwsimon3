@@ -779,6 +779,7 @@ async function startGame() {
  * Replays ALL prior symbols plus the newest one.
  */
 async function playRound() {
+  await sleep(500);
   morsePlaybackActive = true;
   setInputCaptureMode(false);
 
