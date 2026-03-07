@@ -143,8 +143,11 @@ function gapAdjust(delta) {
 }
 
 function adjustWpm(direction) {
-  // +1 WPM => UNIT_MS - 5, -1 WPM => UNIT_MS + 5
-  UNIT_MS = Math.max(10, UNIT_MS + direction * -5);
+  if (direction > 0) {
+    UNIT_MS = Math.max(10, UNIT_MS - 5);
+  } else {
+    UNIT_MS = UNIT_MS + 5;
+  }
   refreshSpeedDisplay();
 }
 
