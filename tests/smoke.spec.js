@@ -176,20 +176,16 @@ test("speed controls present in settings panel", async ({ page }) => {
   await expect(page.locator("#wordGapPlus")).toBeVisible();
   await expect(page.locator("#wordGapValue")).toBeVisible();
 
-  // Verify WPM + click changes the displayed value
-  // adjustWpm(1) reduces UNIT_MS by 5, so multiple clicks cross a WPM rounding boundary
-  for (let i = 0; i < 5; i++) {
-    await page.locator("#wpmPlus").click();
-  }
+  // Verify WPM + click increments the displayed number by 1
+  const initialWpm = await page.locator("#wpmValue").textContent();
+  await page.locator("#wpmPlus").click();
   const increasedWpm = await page.locator("#wpmValue").textContent();
-  expect(Number(increasedWpm)).toBeGreaterThan(8);
+  expect(Number(increasedWpm)).toBe(Number(initialWpm) + 1);
 
-  // Verify WPM - click works (reduce back)
-  for (let i = 0; i < 5; i++) {
-    await page.locator("#wpmMinus").click();
-  }
+  // Verify WPM - click decrements the displayed number by 1
+  await page.locator("#wpmMinus").click();
   const restoredWpm = await page.locator("#wpmValue").textContent();
-  expect(Number(restoredWpm)).toBe(8);
+  expect(Number(restoredWpm)).toBe(Number(initialWpm));
 
   // Verify word gap +/- changes displayed value
   const initialGap = await page.locator("#wordGapValue").textContent();

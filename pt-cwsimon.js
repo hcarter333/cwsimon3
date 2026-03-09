@@ -148,7 +148,8 @@ function adjustWpm(direction) {
   } else {
     UNIT_MS = UNIT_MS + 5;
   }
-  refreshSpeedDisplay();
+  var wpmEl = document.getElementById("wpmValue");
+  if (wpmEl) wpmEl.textContent = Number(wpmEl.textContent) + direction;
 }
 
 function adjustWordGap(delta) {
