@@ -1,6 +1,6 @@
 
 
-let UNIT_MS = 150; // 150ms ~ 8 WPM dot
+let UNIT_MS = 150; // 150ms = 8 WPM dot
 let WORD_GAP_MS = 7 * UNIT_MS; // default word-gap: 7 × UNIT_MS = 1050ms
 
 // Use the authoritative MORSE_TABLE from simon-game-logic.js when available,
@@ -96,20 +96,14 @@ async function sendMorseMessage(freqStr, text) {
  * Sets morsePlaybackActive to prevent histogram/cwmsg corruption.
  *
  * @param {string[]} sequence - Array of uppercase characters to play.
- * @param {number} [wpm] - Optional WPM override (temporarily changes UNIT_MS).
  * @returns {Promise<void>}
  */
-async function playSequenceMorse(sequence, wpm) {
+async function playSequenceMorse(sequence) {
   await ensureAudioReady();
   morsePlaybackActive = true;
-  var savedUnit = UNIT_MS;
-  if (wpm && wpm > 0) {
-    UNIT_MS = Math.round(1200 / wpm);
-  }
   try {
     await sendMorseMessage(null, sequence.join(""));
   } finally {
-    UNIT_MS = savedUnit;
     morsePlaybackActive = false;
     stopSidetone();
   }

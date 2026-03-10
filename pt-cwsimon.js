@@ -25,6 +25,7 @@ let serialPort = null;
 let prevCTS = null;
 let lastElementTouched = null;
 let morsePlaybackActive = false;
+let currentWpm = 8;
 let _simonState = null;
 const LOSE_SOUND_FREQ = 300;
 let loseSoundMuted = false;
@@ -145,11 +146,12 @@ function gapAdjust(delta) {
 function adjustWpm(direction) {
   if (direction > 0) {
     UNIT_MS = Math.max(10, UNIT_MS - 5);
+    currentWpm += 1;
   } else {
     UNIT_MS = UNIT_MS + 5;
+    currentWpm -= 1;
   }
-  var wpmEl = document.getElementById("wpmValue");
-  if (wpmEl) wpmEl.textContent = Number(wpmEl.textContent) + direction;
+  refreshSpeedDisplay();
 }
 
 function adjustWordGap(delta) {
@@ -160,7 +162,7 @@ function adjustWordGap(delta) {
 function refreshSpeedDisplay() {
   var wpmEl = document.getElementById("wpmValue");
   var gapEl = document.getElementById("wordGapValue");
-  if (wpmEl) wpmEl.textContent = Math.round(1200 / UNIT_MS);
+  if (wpmEl) wpmEl.textContent = currentWpm;
   if (gapEl) gapEl.textContent = WORD_GAP_MS;
 }
 
