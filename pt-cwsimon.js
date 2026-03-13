@@ -590,6 +590,11 @@ document.addEventListener("DOMContentLoaded", () => {
     restartBtn.addEventListener("click", restartGame);
   }
 
+  var cancelBtn = document.getElementById("loseCancelBtn");
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", cancelToMenu);
+  }
+
   const settingsGearBtn = document.getElementById("settingsGearBtn");
   const settingsPanel = document.getElementById("settingsPanel");
   const settingsCloseBtn = document.getElementById("settingsCloseBtn");
@@ -744,6 +749,11 @@ function hideLoseModal() {
 function restartGame() {
   hideLoseModal();
   startGame();
+}
+
+function cancelToMenu() {
+  hideLoseModal();
+  _simonState = null;
 }
 
 // === Simon Game Orchestration =============================================

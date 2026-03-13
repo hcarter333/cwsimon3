@@ -135,6 +135,45 @@ test("Play Again button restarts game", async ({ page }) => {
 });
 
 // ---------------------------------------------------------------------------
+// 5b. Cancel button dismisses lose modal and returns to welcome screen
+// ---------------------------------------------------------------------------
+test("Cancel button dismisses lose modal and returns to welcome screen", async ({
+  page,
+}) => {
+  await page.goto(PAGE);
+
+  // Show lose modal
+  await page.evaluate(() => {
+    window._simonState = {
+      sequence: ["E", "T"],
+      round: 2,
+      inputBuffer: [],
+      inputIndex: 1,
+      finished: true,
+      randomFn: Math.random,
+    };
+    window.showLoseModal(1);
+  });
+
+  const modal = page.locator("#loseModal");
+  await expect(modal).toHaveClass(/visible/);
+
+  const cancelBtn = page.locator("#loseCancelBtn");
+  await expect(cancelBtn).toBeVisible();
+  await expect(cancelBtn).toHaveText(/Back to Menu/i);
+
+  // Click Cancel — modal should hide and game state should be cleared
+  await cancelBtn.click();
+
+  // Modal should be hidden
+  await expect(modal).not.toHaveClass(/visible/, { timeout: 3000 });
+
+  // Start Game button should still be available (user is back at welcome screen)
+  const startBtn = page.locator("#startGameButton");
+  await expect(startBtn).toBeVisible();
+});
+
+// ---------------------------------------------------------------------------
 // 6. Settings gear opens panel, X closes it
 // ---------------------------------------------------------------------------
 test("settings gear opens panel and X closes it", async ({ page }) => {

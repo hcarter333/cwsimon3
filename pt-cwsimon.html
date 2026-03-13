@@ -232,7 +232,8 @@
         margin-bottom: 1.5rem;
       }
 
-      #loseRestartBtn {
+      #loseRestartBtn,
+      #loseCancelBtn {
         font-size: 1.2rem;
         padding: 0.8rem 2rem;
         background: #333;
@@ -241,6 +242,10 @@
         border-radius: 8px;
         cursor: pointer;
         touch-action: manipulation;
+      }
+
+      #loseCancelBtn {
+        margin-left: 1rem;
       }
     </style>
   </head>
@@ -275,6 +280,7 @@
         <p id="loseProgressMsg"></p>
         <p id="loseProgressSeq" style="font-size: 2rem; letter-spacing: 0.3em;"></p>
         <button id="loseRestartBtn" type="button">Play Again?</button>
+        <button id="loseCancelBtn" type="button">Back to Menu</button>
       </div>
     </div>
 

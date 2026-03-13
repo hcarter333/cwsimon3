@@ -50,6 +50,16 @@ This will also be where they can turn on and off the losing sound
 ### game defaults 
 The words per minute should be set at 8 words per minute (WPM)
 
+## Lose Screen Behavior
+
+When the player enters a letter incorrectly, the game ends and the lose modal (`#loseModal`) is displayed. The modal shows how many rounds the player completed and the sequence progress with a cross mark at the point of failure.
+
+### Play Again button
+The "Play Again?" button (`#loseRestartBtn`) dismisses the lose modal and immediately starts a new game by calling `restartGame()`, which hides the modal and invokes `startGame()`.
+
+### Back to Menu button
+The "Back to Menu" button (`#loseCancelBtn`) dismisses the lose modal and returns the user to the welcome screen without starting a new game. This clears the game state (`_simonState` is set to `null`), allowing the user to adjust settings (WPM, word gap) or take a break before starting a new game via the "Start Game" button.
+
 ## scorekeeper
  
 We also need something to keep track of how many rounds (turns) they got through before they messed up, then display that. Be sure to include the rounds completed count on the game's 'do you want to play again screen.' Remember, this is related to the description above: "The game continus until you send back a letter incorrectly. When that happens, a screen will pop up saying how many letters you got right, and ask if you want to play again. If you hit ok, the game will start over."
