@@ -174,6 +174,36 @@ test("Cancel button dismisses lose modal and returns to welcome screen", async (
 });
 
 // ---------------------------------------------------------------------------
+// 5c. Welcome screen cosmetic layout (GH #my-gpag)
+//     Cosmetic test — expected to change as the UI evolves.
+//     Not a stable contract; update freely when the welcome screen changes.
+// ---------------------------------------------------------------------------
+test("welcome screen shows correct heading, subtitle, and hidden Hk button", async ({
+  page,
+}) => {
+  await page.goto(PAGE);
+  await page.waitForLoadState("domcontentloaded");
+
+  // Heading should be an h2 with the updated text
+  const heading = page.locator("#app h2");
+  await expect(heading).toHaveText("Project TouCans CWSimon");
+
+  // Subtitle paragraph
+  const subtitle = page.locator("#app p");
+  await expect(subtitle).toHaveText(
+    "Use the virtual paddle (1/3) as an iambic keyer (dit/dah.)"
+  );
+
+  // Start Hk button should exist but not be visible
+  const hkButton = page.locator("#startHalikey");
+  await expect(hkButton).toBeHidden();
+
+  // Start Game button should still be accessible
+  const startBtn = page.locator("#startGameButton");
+  await expect(startBtn).toBeVisible();
+});
+
+// ---------------------------------------------------------------------------
 // 6. Settings gear opens panel, X closes it
 // ---------------------------------------------------------------------------
 test("settings gear opens panel and X closes it", async ({ page }) => {

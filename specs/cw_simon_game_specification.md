@@ -64,6 +64,19 @@ The "Back to Menu" button (`#loseCancelBtn`) dismisses the lose modal and return
  
 We also need something to keep track of how many rounds (turns) they got through before they messed up, then display that. Be sure to include the rounds completed count on the game's 'do you want to play again screen.' Remember, this is related to the description above: "The game continus until you send back a letter incorrectly. When that happens, a screen will pop up saying how many letters you got right, and ask if you want to play again. If you hit ok, the game will start over."
  
+## Test Cases
+
+### Welcome screen cosmetic layout (smoke.spec.js, test 5c)
+
+**Purpose:** Verify the welcome screen heading, subtitle, and button visibility after cosmetic updates (GH #my-gpag). This is a cosmetic test expected to change as the UI evolves — not a stable contract.
+
+**Checks:**
+- Heading is an `<h2>` with text "Project TouCans CWSimon"
+- Subtitle `<p>` reads "Use the virtual paddle (1/3) as an iambic keyer (dit/dah.)"
+- "Start Hk" button (`#startHalikey`) exists in the DOM but is hidden (`display: none`)
+- "Start Game" button remains visible and accessible
+- The keyer button panel (1/2/3) is positioned lower on screen (`top: 65%`) to keep control buttons accessible without reaching past the keyer
+
 ## development guidelines
 
 The pieces of the game will be developed in parallel
