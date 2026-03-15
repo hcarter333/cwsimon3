@@ -46,6 +46,9 @@ Letter speed (controlled by UNIT_MS) and word speed (the space between character
  
 ### Losing raspberry sound mute
 This will also be where they can turn on and off the losing sound
+
+### tx haptics
+A toggle labeled "tx haptics" (default: off). When enabled, triggers `navigator.vibrate()` for the duration of each dit/dah alongside the sidetone audio during Morse playback. Enables quiet practice and avoids audio capture conflicts during streaming. The setting is persisted in localStorage.
  
 ### game defaults 
 The words per minute should be set at 8 words per minute (WPM)

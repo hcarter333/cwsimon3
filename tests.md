@@ -135,6 +135,10 @@ server on port 3737 via `npx serve . -l 3737`.
 | 5 | Play Again button restarts game | Clicking Play Again hides modal and starts fresh game |
 | 6 | settings gear opens panel and X closes it | Settings panel toggles open/closed |
 | 7 | speed controls present in settings panel | WPM and word gap controls are visible and functional |
+| 8 | tx haptics toggle exists in settings and defaults to Off | Toggle button present and shows "Off" by default |
+| 9 | tx haptics toggle state persists after settings close/reopen | Toggling to On survives panel close/reopen |
+| 10 | tx haptics on triggers navigator.vibrate during playback | navigator.vibrate called during Morse playback when enabled |
+| 11 | tx haptics off does not trigger navigator.vibrate during playback | navigator.vibrate not called when toggle is off (default) |
 
 ---
 
@@ -146,7 +150,7 @@ These are the tests that **must pass** before pushing code. Run all three:
 node test-input-decoder.js && node test-matcher.js && npx playwright test
 ```
 
-**All 50 tests** (24 decoder + 19 matcher + 7 Playwright) constitute the smoke
+**All 54 tests** (24 decoder + 19 matcher + 11 Playwright) constitute the smoke
 suite. A failure in any test blocks the push.
 
 Quick check (Node tests only, no browser needed):
@@ -157,3 +161,6 @@ node test-input-decoder.js && node test-matcher.js
 
 This runs the 43 logic tests in under a second and catches most regressions
 without requiring Playwright browsers to be installed.
+
+Note: tx haptics tests (8-11) require a browser environment for
+`navigator.vibrate` and localStorage APIs.

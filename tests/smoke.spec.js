@@ -262,3 +262,114 @@ test("speed controls present in settings panel", async ({ page }) => {
   const increasedGap = await page.locator("#wordGapValue").textContent();
   expect(Number(increasedGap)).toBeGreaterThan(Number(initialGap));
 });
+
+// ---------------------------------------------------------------------------
+// 8. tx haptics toggle exists and defaults to Off
+// ---------------------------------------------------------------------------
+test("tx haptics toggle exists in settings and defaults to Off", async ({
+  page,
+}) => {
+  await page.goto(PAGE);
+
+  await page.locator("#settingsGearBtn").click();
+  await expect(page.locator("#settingsPanel")).toHaveClass(/open/);
+
+  const toggle = page.locator("#txHapticsToggle");
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveText("Off");
+});
+
+// ---------------------------------------------------------------------------
+// 9. tx haptics toggle persists after settings close/reopen
+// ---------------------------------------------------------------------------
+test("tx haptics toggle state persists after settings close/reopen", async ({
+  page,
+}) => {
+  await page.goto(PAGE);
+
+  // Open settings and toggle on
+  await page.locator("#settingsGearBtn").click();
+  await expect(page.locator("#settingsPanel")).toHaveClass(/open/);
+
+  const toggle = page.locator("#txHapticsToggle");
+  await toggle.click();
+  await expect(toggle).toHaveText("On");
+
+  // Close and reopen settings
+  await page.locator("#settingsCloseBtn").click();
+  await expect(page.locator("#settingsPanel")).not.toHaveClass(/open/);
+  await page.locator("#settingsGearBtn").click();
+  await expect(page.locator("#settingsPanel")).toHaveClass(/open/);
+
+  // Toggle should still show On
+  await expect(toggle).toHaveText("On");
+});
+
+// ---------------------------------------------------------------------------
+// 10. tx haptics on triggers navigator.vibrate during morse playback
+// ---------------------------------------------------------------------------
+test("tx haptics on triggers navigator.vibrate during playback", async ({
+  page,
+}) => {
+  await page.goto(PAGE);
+
+  // Enable tx haptics via the toggle button
+  await page.locator("#settingsGearBtn").click();
+  await expect(page.locator("#settingsPanel")).toHaveClass(/open/);
+  await page.locator("#txHapticsToggle").click();
+  await expect(page.locator("#txHapticsToggle")).toHaveText("On");
+  await page.locator("#settingsCloseBtn").click();
+
+  // Stub navigator.vibrate and speed up playback
+  await page.evaluate(() => {
+    window._vibrateLog = [];
+    navigator.vibrate = (duration) => {
+      window._vibrateLog.push(duration);
+      return true;
+    };
+    window.UNIT_MS = 5;
+    window.WORD_GAP_MS = 10;
+  });
+
+  // Start game and wait for playback to complete
+  await page.locator("#startGameButton").click();
+
+  // Wait for at least one vibrate call
+  await page.waitForFunction(() => window._vibrateLog.length > 0, null, {
+    timeout: 5000,
+  });
+
+  const vibrateCount = await page.evaluate(() => window._vibrateLog.length);
+  expect(vibrateCount).toBeGreaterThan(0);
+});
+
+// ---------------------------------------------------------------------------
+// 11. tx haptics off (default) does not trigger navigator.vibrate
+// ---------------------------------------------------------------------------
+test("tx haptics off does not trigger navigator.vibrate during playback", async ({
+  page,
+}) => {
+  await page.goto(PAGE);
+
+  // Stub navigator.vibrate and speed up playback (haptics off by default)
+  await page.evaluate(() => {
+    window._vibrateLog = [];
+    navigator.vibrate = (duration) => {
+      window._vibrateLog.push(duration);
+      return true;
+    };
+    window.UNIT_MS = 5;
+    window.WORD_GAP_MS = 10;
+  });
+
+  // Start game
+  await page.locator("#startGameButton").click();
+
+  // Wait for playback to finish (overlay should appear and disappear)
+  const overlay = page.locator("#morseOverlay");
+  await expect(overlay).toHaveClass(/visible/, { timeout: 5000 });
+  await expect(overlay).not.toHaveClass(/visible/, { timeout: 5000 });
+
+  const vibrateCount = await page.evaluate(() => window._vibrateLog.length);
+  expect(vibrateCount).toBe(0);
+});

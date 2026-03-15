@@ -29,6 +29,7 @@ let currentWpm = 8;
 let _simonState = null;
 const LOSE_SOUND_FREQ = 300;
 let loseSoundMuted = false;
+let _txHapticsEnabled = localStorage.getItem("txHaptics") === "true";
 
 async function ensureAudioReady() {
   if (!note_context) {
@@ -632,6 +633,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // tx haptics toggle
+  var txHapticsToggle = document.getElementById("txHapticsToggle");
+  if (txHapticsToggle) {
+    txHapticsToggle.textContent = _txHapticsEnabled ? "On" : "Off";
+    txHapticsToggle.addEventListener("click", function () {
+      _txHapticsEnabled = !_txHapticsEnabled;
+      localStorage.setItem("txHaptics", _txHapticsEnabled);
+      txHapticsToggle.textContent = _txHapticsEnabled ? "On" : "Off";
+    });
+  }
+
   // Wire Simon input decoder to keyer hooks (already called via initSimonInputWiring above)
 });
 
@@ -778,6 +790,9 @@ async function playMorseSequence(sequence) {
     for (var j = 0; j < pattern.length; j++) {
       var durUnits = pattern[j] === "." ? 1 : 3;
       playSidetone();
+      if (_txHapticsEnabled && navigator.vibrate) {
+        navigator.vibrate(durUnits * unit);
+      }
       await sleep(durUnits * unit);
       stopSidetone();
       // Intra-character gap (between elements within a letter)
