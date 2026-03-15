@@ -373,3 +373,116 @@ test("tx haptics off does not trigger navigator.vibrate during playback", async 
   const vibrateCount = await page.evaluate(() => window._vibrateLog.length);
   expect(vibrateCount).toBe(0);
 });
+
+// ---------------------------------------------------------------------------
+// 12. Letter Overlay toggle exists and defaults to On
+// ---------------------------------------------------------------------------
+test("Letter Overlay toggle exists in settings and defaults to On", async ({
+  page,
+}) => {
+  await page.goto(PAGE);
+
+  await page.locator("#settingsGearBtn").click();
+  await expect(page.locator("#settingsPanel")).toHaveClass(/open/);
+
+  const toggle = page.locator("#letterOverlayToggle");
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveText("On");
+});
+
+// ---------------------------------------------------------------------------
+// 13. Letter Overlay off suppresses overlay during playback
+// ---------------------------------------------------------------------------
+test("Letter Overlay off suppresses overlay during playback", async ({
+  page,
+}) => {
+  await page.goto(PAGE);
+
+  // Turn off Letter Overlay
+  await page.locator("#settingsGearBtn").click();
+  await expect(page.locator("#settingsPanel")).toHaveClass(/open/);
+  const toggle = page.locator("#letterOverlayToggle");
+  await toggle.click();
+  await expect(toggle).toHaveText("Off");
+  await page.locator("#settingsCloseBtn").click();
+
+  // Speed up playback and install a spy to track if overlay was ever shown
+  await page.evaluate(() => {
+    window.UNIT_MS = 5;
+    window.WORD_GAP_MS = 10;
+    window._overlayWasVisible = false;
+    var overlay = document.getElementById("morseOverlay");
+    new MutationObserver(function () {
+      if (overlay.classList.contains("visible")) {
+        window._overlayWasVisible = true;
+      }
+    }).observe(overlay, { attributes: true, attributeFilter: ["class"] });
+  });
+
+  // Start game — round 1 plays one letter.
+  // With UNIT_MS=5, playback takes ~500ms (sleep) + ~40ms (one letter) = ~540ms.
+  await page.locator("#startGameButton").click();
+
+  // Wait well past the playback time to ensure it has completed
+  await page.waitForTimeout(2000);
+
+  // The overlay should never have gained the visible class
+  const wasVisible = await page.evaluate(() => window._overlayWasVisible);
+  expect(wasVisible).toBe(false);
+});
+
+// ---------------------------------------------------------------------------
+// 14. Letter Overlay on (default) shows overlay during playback
+// ---------------------------------------------------------------------------
+test("Letter Overlay on shows overlay during playback", async ({ page }) => {
+  await page.goto(PAGE);
+
+  // Install spy before speeding up playback
+  await page.evaluate(() => {
+    window.UNIT_MS = 5;
+    window.WORD_GAP_MS = 10;
+    window._overlayWasVisible = false;
+    var overlay = document.getElementById("morseOverlay");
+    new MutationObserver(function () {
+      if (overlay.classList.contains("visible")) {
+        window._overlayWasVisible = true;
+      }
+    }).observe(overlay, { attributes: true, attributeFilter: ["class"] });
+  });
+
+  // Start game with default settings (overlay on)
+  await page.locator("#startGameButton").click();
+
+  // Wait for playback to complete
+  await page.waitForTimeout(2000);
+
+  // The overlay should have been shown at least once
+  const wasVisible = await page.evaluate(() => window._overlayWasVisible);
+  expect(wasVisible).toBe(true);
+});
+
+// ---------------------------------------------------------------------------
+// 15. Letter Overlay toggle state persists after settings close/reopen
+// ---------------------------------------------------------------------------
+test("Letter Overlay toggle state persists after settings close/reopen", async ({
+  page,
+}) => {
+  await page.goto(PAGE);
+
+  // Open settings and toggle off
+  await page.locator("#settingsGearBtn").click();
+  await expect(page.locator("#settingsPanel")).toHaveClass(/open/);
+
+  const toggle = page.locator("#letterOverlayToggle");
+  await toggle.click();
+  await expect(toggle).toHaveText("Off");
+
+  // Close and reopen settings
+  await page.locator("#settingsCloseBtn").click();
+  await expect(page.locator("#settingsPanel")).not.toHaveClass(/open/);
+  await page.locator("#settingsGearBtn").click();
+  await expect(page.locator("#settingsPanel")).toHaveClass(/open/);
+
+  // Toggle should still show Off
+  await expect(toggle).toHaveText("Off");
+});

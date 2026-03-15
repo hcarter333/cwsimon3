@@ -139,6 +139,10 @@ server on port 3737 via `npx serve . -l 3737`.
 | 9 | tx haptics toggle state persists after settings close/reopen | Toggling to On survives panel close/reopen |
 | 10 | tx haptics on triggers navigator.vibrate during playback | navigator.vibrate called during Morse playback when enabled |
 | 11 | tx haptics off does not trigger navigator.vibrate during playback | navigator.vibrate not called when toggle is off (default) |
+| 12 | Letter Overlay toggle exists in settings and defaults to On | Toggle button present and shows "On" by default |
+| 13 | Letter Overlay off suppresses overlay during playback | #morseOverlay never gets .visible class when toggle is off |
+| 14 | Letter Overlay on shows overlay during playback | #morseOverlay gets .visible class during playback (default on) |
+| 15 | Letter Overlay toggle state persists after settings close/reopen | Toggling to Off survives panel close/reopen |
 
 ---
 
@@ -150,7 +154,7 @@ These are the tests that **must pass** before pushing code. Run all three:
 node test-input-decoder.js && node test-matcher.js && npx playwright test
 ```
 
-**All 54 tests** (24 decoder + 19 matcher + 11 Playwright) constitute the smoke
+**All 58 tests** (24 decoder + 19 matcher + 15 Playwright) constitute the smoke
 suite. A failure in any test blocks the push.
 
 Quick check (Node tests only, no browser needed):
@@ -162,5 +166,5 @@ node test-input-decoder.js && node test-matcher.js
 This runs the 43 logic tests in under a second and catches most regressions
 without requiring Playwright browsers to be installed.
 
-Note: tx haptics tests (8-11) require a browser environment for
-`navigator.vibrate` and localStorage APIs.
+Note: tx haptics tests (8-11) and letter overlay tests (12-15) require a
+browser environment for `navigator.vibrate` and localStorage APIs.

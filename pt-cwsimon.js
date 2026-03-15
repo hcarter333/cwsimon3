@@ -30,6 +30,7 @@ let _simonState = null;
 const LOSE_SOUND_FREQ = 300;
 let loseSoundMuted = false;
 let _txHapticsEnabled = localStorage.getItem("txHaptics") === "true";
+let _letterOverlayEnabled = localStorage.getItem("letterOverlay") !== "false";
 
 async function ensureAudioReady() {
   if (!note_context) {
@@ -644,12 +645,24 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Letter overlay toggle
+  var letterOverlayToggle = document.getElementById("letterOverlayToggle");
+  if (letterOverlayToggle) {
+    letterOverlayToggle.textContent = _letterOverlayEnabled ? "On" : "Off";
+    letterOverlayToggle.addEventListener("click", function () {
+      _letterOverlayEnabled = !_letterOverlayEnabled;
+      localStorage.setItem("letterOverlay", _letterOverlayEnabled);
+      letterOverlayToggle.textContent = _letterOverlayEnabled ? "On" : "Off";
+    });
+  }
+
   // Wire Simon input decoder to keyer hooks (already called via initSimonInputWiring above)
 });
 
 // === Letter Overlay ========================================================
 
 function showLetterOverlay(letter) {
+  if (!_letterOverlayEnabled) return;
   var el = document.getElementById("morseOverlay");
   if (!el) return;
   el.textContent = letter;
