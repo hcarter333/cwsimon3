@@ -431,20 +431,11 @@ function keyPress() {
     ensureAudioReady();
     if (practiceMode) {
       playSidetone();
-      if (_txHapticsEnabled && navigator.vibrate) {
-        navigator.vibrate(99999);
-      }
     }
   }
 }
 
 function keyRelease() {
-  // Always cancel user haptic vibration on release, even during playback,
-  // to prevent the long vibrate(99999) from persisting after paddle release.
-  if (_txHapticsEnabled && navigator.vibrate) {
-    navigator.vibrate(0);
-  }
-
   if (morsePlaybackActive) return;
   // Ignore stray releases
   if (keydown === 0) return;
@@ -499,6 +490,9 @@ async function startIambic(sideId) {
 
   while (myToken === iambicToken) {
     keyPress();
+    if (_txHapticsEnabled && navigator.vibrate) {
+      navigator.vibrate(toneUnits * UNIT_MS);
+    }
     await sleep(toneUnits * UNIT_MS); // tone duration
     keyRelease();
 
@@ -721,8 +715,6 @@ async function onGameLose() {
   setInputCaptureMode(false);
   morsePlaybackActive = false;
   stopSidetone();
-  // Cancel any lingering user haptic vibration
-  if (_txHapticsEnabled && navigator.vibrate) navigator.vibrate(0);
 
   var score = SimonGame.getScore(_simonState);
 
@@ -856,8 +848,6 @@ async function startGame() {
  * Replays ALL prior symbols plus the newest one.
  */
 async function playRound() {
-  // Cancel any lingering user haptic vibration before playback begins
-  if (_txHapticsEnabled && navigator.vibrate) navigator.vibrate(0);
   await sleep(500);
   morsePlaybackActive = true;
   setInputCaptureMode(false);

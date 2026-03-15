@@ -48,7 +48,7 @@ Letter speed (controlled by UNIT_MS) and word speed (the space between character
 This will also be where they can turn on and off the losing sound
 
 ### tx haptics
-A toggle labeled "tx haptics" (default: off). When enabled, triggers `navigator.vibrate()` for the duration of each dit/dah alongside the sidetone audio during Morse playback, and also during user-pressed paddle input (keyPress starts a long vibration, keyRelease cancels it with `navigator.vibrate(0)`). Enables quiet practice and avoids audio capture conflicts during streaming. The setting is persisted in localStorage.
+A toggle labeled "tx haptics" (default: off). When enabled, triggers `navigator.vibrate()` for the duration of each dit/dah element alongside the sidetone audio during both Morse playback and user paddle input. In `startIambic()`, vibration fires with a timed duration (`toneUnits * UNIT_MS`) that is self-terminating — no cancel call needed. Enables quiet practice and avoids audio capture conflicts during streaming. The setting is persisted in localStorage.
 
 ### Letter Overlay
 A toggle labeled "Letter Overlay" (default: on). When enabled, letters display on screen via `showLetterOverlay()` as corresponding morse code plays (current behavior). When disabled, the overlay is suppressed during playback. The setting is persisted in localStorage.

@@ -375,9 +375,9 @@ test("tx haptics off does not trigger navigator.vibrate during playback", async 
 });
 
 // ---------------------------------------------------------------------------
-// 12a. tx haptics on triggers navigator.vibrate on paddle keyPress
+// 12a. tx haptics on triggers navigator.vibrate in startIambic with timed duration
 // ---------------------------------------------------------------------------
-test("tx haptics on triggers navigator.vibrate on paddle keyPress", async ({
+test("tx haptics on triggers navigator.vibrate in startIambic with timed duration", async ({
   page,
 }) => {
   await page.goto(PAGE);
@@ -398,20 +398,30 @@ test("tx haptics on triggers navigator.vibrate on paddle keyPress", async ({
     };
   });
 
-  // Simulate paddle press via keyPress
+  // startIambic with dit side (id=1) — should vibrate for 1 * UNIT_MS
   await page.evaluate(() => {
-    keyPress();
+    startIambic("1");
+  });
+
+  // Wait for one element cycle to complete
+  await page.waitForTimeout(300);
+
+  // Cancel iambic to stop the loop
+  await page.evaluate(() => {
+    iambicActive = false;
   });
 
   const log = await page.evaluate(() => window._vibrateLog);
   expect(log.length).toBeGreaterThan(0);
-  expect(log[0]).toBe(99999);
+  // Should be a finite duration (UNIT_MS), not 99999
+  expect(log[0]).toBeGreaterThan(0);
+  expect(log[0]).toBeLessThan(1000);
 });
 
 // ---------------------------------------------------------------------------
-// 12b. tx haptics on cancels navigator.vibrate on paddle keyRelease
+// 12b. tx haptics: no navigator.vibrate calls in keyPress/keyRelease
 // ---------------------------------------------------------------------------
-test("tx haptics on cancels navigator.vibrate on paddle keyRelease", async ({
+test("tx haptics does not trigger navigator.vibrate in keyPress or keyRelease", async ({
   page,
 }) => {
   await page.goto(PAGE);
@@ -432,16 +442,14 @@ test("tx haptics on cancels navigator.vibrate on paddle keyRelease", async ({
     };
   });
 
-  // Simulate paddle press then release
+  // Directly call keyPress and keyRelease — should NOT vibrate
   await page.evaluate(() => {
     keyPress();
     keyRelease();
   });
 
   const log = await page.evaluate(() => window._vibrateLog);
-  // Should have vibrate(99999) from press, then vibrate(0) from release
-  expect(log).toContain(99999);
-  expect(log).toContain(0);
+  expect(log.length).toBe(0);
 });
 
 // ---------------------------------------------------------------------------
