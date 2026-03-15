@@ -431,6 +431,9 @@ function keyPress() {
     ensureAudioReady();
     if (practiceMode) {
       playSidetone();
+      if (_txHapticsEnabled && navigator.vibrate) {
+        navigator.vibrate(99999);
+      }
     }
   }
 }
@@ -454,6 +457,9 @@ function keyRelease() {
   // local practice sidetone off
   if (practiceMode) {
     stopSidetone();
+    if (_txHapticsEnabled && navigator.vibrate) {
+      navigator.vibrate(0);
+    }
   }
 }
 

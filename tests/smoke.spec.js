@@ -375,6 +375,104 @@ test("tx haptics off does not trigger navigator.vibrate during playback", async 
 });
 
 // ---------------------------------------------------------------------------
+// 12a. tx haptics on triggers navigator.vibrate on paddle keyPress
+// ---------------------------------------------------------------------------
+test("tx haptics on triggers navigator.vibrate on paddle keyPress", async ({
+  page,
+}) => {
+  await page.goto(PAGE);
+
+  // Enable tx haptics and practiceMode, stub navigator.vibrate
+  await page.locator("#settingsGearBtn").click();
+  await expect(page.locator("#settingsPanel")).toHaveClass(/open/);
+  await page.locator("#txHapticsToggle").click();
+  await expect(page.locator("#txHapticsToggle")).toHaveText("On");
+  await page.locator("#settingsCloseBtn").click();
+
+  await page.evaluate(() => {
+    practiceMode = true;
+    window._vibrateLog = [];
+    navigator.vibrate = (duration) => {
+      window._vibrateLog.push(duration);
+      return true;
+    };
+  });
+
+  // Simulate paddle press via keyPress
+  await page.evaluate(() => {
+    keyPress();
+  });
+
+  const log = await page.evaluate(() => window._vibrateLog);
+  expect(log.length).toBeGreaterThan(0);
+  expect(log[0]).toBe(99999);
+});
+
+// ---------------------------------------------------------------------------
+// 12b. tx haptics on cancels navigator.vibrate on paddle keyRelease
+// ---------------------------------------------------------------------------
+test("tx haptics on cancels navigator.vibrate on paddle keyRelease", async ({
+  page,
+}) => {
+  await page.goto(PAGE);
+
+  // Enable tx haptics and practiceMode, stub navigator.vibrate
+  await page.locator("#settingsGearBtn").click();
+  await expect(page.locator("#settingsPanel")).toHaveClass(/open/);
+  await page.locator("#txHapticsToggle").click();
+  await expect(page.locator("#txHapticsToggle")).toHaveText("On");
+  await page.locator("#settingsCloseBtn").click();
+
+  await page.evaluate(() => {
+    practiceMode = true;
+    window._vibrateLog = [];
+    navigator.vibrate = (duration) => {
+      window._vibrateLog.push(duration);
+      return true;
+    };
+  });
+
+  // Simulate paddle press then release
+  await page.evaluate(() => {
+    keyPress();
+    keyRelease();
+  });
+
+  const log = await page.evaluate(() => window._vibrateLog);
+  // Should have vibrate(99999) from press, then vibrate(0) from release
+  expect(log).toContain(99999);
+  expect(log).toContain(0);
+});
+
+// ---------------------------------------------------------------------------
+// 12c. tx haptics off does not trigger navigator.vibrate on paddle press/release
+// ---------------------------------------------------------------------------
+test("tx haptics off does not trigger navigator.vibrate on paddle press/release", async ({
+  page,
+}) => {
+  await page.goto(PAGE);
+
+  // haptics off by default, enable practiceMode, stub navigator.vibrate
+  await page.evaluate(() => {
+    practiceMode = true;
+    window._vibrateLog = [];
+    navigator.vibrate = (duration) => {
+      window._vibrateLog.push(duration);
+      return true;
+    };
+  });
+
+  // Simulate paddle press and release
+  await page.evaluate(() => {
+    keyPress();
+    keyRelease();
+  });
+
+  const vibrateCount = await page.evaluate(() => window._vibrateLog.length);
+  expect(vibrateCount).toBe(0);
+});
+
+// ---------------------------------------------------------------------------
 // 12. Letter Overlay toggle exists and defaults to On
 // ---------------------------------------------------------------------------
 test("Letter Overlay toggle exists in settings and defaults to On", async ({
