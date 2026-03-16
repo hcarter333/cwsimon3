@@ -528,9 +528,11 @@ function enter(element) {
     startIambic(element.id);
   }
 
-  if (element) {
+  if (element && (element.id == "1" || element.id == "3")) {
     element.textContent = "on";
     lastElementTouched = element;
+  } else {
+    lastElementTouched = null;
   }
 }
 
@@ -542,7 +544,9 @@ function stay(element) {
 
 // Called when leaving an element.
 function leave(element) {
-  element.textContent = "off";
+  if (element && (element.id == "1" || element.id == "3")) {
+    element.textContent = "off";
+  }
   iambicActive = false;
 }
 
