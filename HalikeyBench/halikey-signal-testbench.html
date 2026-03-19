@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Halikey Serial Signal Test Bench</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      line-height: 1.4;
+    }
+
+    h1 {
+      margin-bottom: 0.5rem;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+
+    button {
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .status {
+      margin: 0.75rem 0 1rem 0;
+      font-weight: bold;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 420px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      padding: 0.75rem;
+      resize: vertical;
+    }
+
+    .note {
+      margin-top: 1rem;
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+  <h1>Halikey Serial Signal Test Bench</h1>
+  <p>
+    Connect to a Halikey and watch for serial control-signal changes.
+    Each change will be logged below with the signal name and new state.
+  </p>
+
+  <div class="controls">
+    <button id="connectBtn">Connect Halikey</button>
+    <button id="disconnectBtn">Disconnect</button>
+    <button id="clearBtn">Clear Log</button>
+  </div>
+
+  <div class="status" id="statusText">Status: Disconnected</div>
+
+  <textarea id="logArea" readonly></textarea>
+
+  <p class="note">
+    This page requires a browser with Web Serial support and must be served from a secure context.
+  </p>
+
+  <script src="halikey-signal-testbench.js"></script>
+</body>
+</html>
