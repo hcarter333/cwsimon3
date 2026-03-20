@@ -29,6 +29,7 @@ let currentWpm = 8;
 let _simonState = null;
 const LOSE_SOUND_FREQ = 300;
 let loseSoundMuted = false;
+let _losingSequence = "";
 let _txHapticsEnabled = localStorage.getItem("txHaptics") === "true";
 let _letterOverlayEnabled = localStorage.getItem("letterOverlay") !== "false";
 
@@ -445,6 +446,7 @@ function keyRelease() {
   // --- Duration of this element (dot/dash) ---
   const downDur = Math.round(now - dtime);
   keydown = 0;
+  cwmsg += downDur + "+";
 
   updateDtimeHistogram(downDur);
 
@@ -605,6 +607,15 @@ document.addEventListener("DOMContentLoaded", () => {
     cancelBtn.addEventListener("click", cancelToMenu);
   }
 
+  var replayBtn = document.getElementById("loseReplayBtn");
+  if (replayBtn) {
+    replayBtn.addEventListener("click", function () {
+      if (_losingSequence) {
+        playKeySequence(_losingSequence);
+      }
+    });
+  }
+
   const settingsGearBtn = document.getElementById("settingsGearBtn");
   const settingsPanel = document.getElementById("settingsPanel");
   const settingsCloseBtn = document.getElementById("settingsCloseBtn");
@@ -717,6 +728,7 @@ function initSimonInputWiring() {
  */
 async function onGameLose() {
   setInputCaptureMode(false);
+  _losingSequence = cwmsg;
   morsePlaybackActive = false;
   stopSidetone();
 
@@ -864,7 +876,8 @@ async function playRound() {
     stopSidetone();
   }
 
-  // Hand off to user input
+  // Hand off to user input — clear cwmsg so only this turn's input is captured
+  cwmsg = "";
   if (_simonDecoder) _simonDecoder.reset();
   setInputCaptureMode(true);
 }
