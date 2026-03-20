@@ -96,7 +96,7 @@ test("roundtrip: mute->start->read overlay->send same letter->expect next overla
 
           const text = el.innerText.trim();
           const opacity = Number(window.getComputedStyle(el).opacity);
-          return el.classList.contains("visible") && opacity >= 0.99 && /^[A-Z0-9]$/.test(text);
+          return el.classList.contains("visible") && opacity >= 0.99 && /^[A-Z0-9\u00D8]$/.test(text);
         },
         { timeout: 6000 }
       );
@@ -118,7 +118,7 @@ test("roundtrip: mute->start->read overlay->send same letter->expect next overla
     await waitForOverlayVisible();
 
     firstLetter = (await overlay.innerText()).trim();
-    expect(firstLetter).toMatch(/^[A-Z0-9]$/);
+    expect(firstLetter).toMatch(/^[A-Z0-9\u00D8]$/);
 
     await waitForOverlayFullyFaded();
 
@@ -175,7 +175,7 @@ test("roundtrip: mute->start->read overlay->send same letter->expect next overla
     // 4) Fail if a new letter overlay doesn't appear
     await waitForOverlayVisible();
     nextOverlayText = (await overlay.innerText()).trim();
-    expect(nextOverlayText).toMatch(/^[A-Z0-9]$/);
+    expect(nextOverlayText).toMatch(/^[A-Z0-9\u00D8]$/);
 
   } catch (err) {
     await attachDebugArtifacts(err);

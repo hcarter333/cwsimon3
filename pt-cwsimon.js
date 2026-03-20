@@ -672,7 +672,7 @@ function showLetterOverlay(letter) {
   if (!_letterOverlayEnabled) return;
   var el = document.getElementById("morseOverlay");
   if (!el) return;
-  el.textContent = letter;
+  el.textContent = letter === "0" ? "\u00D8" : letter;
   el.classList.add("visible");
 }
 

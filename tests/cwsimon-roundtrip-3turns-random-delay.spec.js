@@ -134,7 +134,7 @@ test("roundtrip: three turns with random gaps on turn 3", async ({ page }, testI
 
           const text = el.innerText.trim();
           const opacity = Number(window.getComputedStyle(el).opacity);
-          return el.classList.contains("visible") && opacity >= 0.99 && /^[A-Z0-9]$/.test(text);
+          return el.classList.contains("visible") && opacity >= 0.99 && /^[A-Z0-9\u00D8]$/.test(text);
         },
         { timeout: 6000 }
       );
@@ -160,7 +160,7 @@ test("roundtrip: three turns with random gaps on turn 3", async ({ page }, testI
         await waitForOverlayVisible();
 
         const letter = (await overlay.innerText()).trim();
-        expect(letter).toMatch(/^[A-Z0-9]$/);
+        expect(letter).toMatch(/^[A-Z0-9\u00D8]$/);
         letters.push(letter);
         turnNotes.push(`turn ${turn}: playback ${index + 1}/${turn} letter=${letter}`);
 
