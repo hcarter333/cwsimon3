@@ -32,6 +32,7 @@ let loseSoundMuted = false;
 let _losingSequence = "";
 let _txHapticsEnabled = localStorage.getItem("txHaptics") === "true";
 let _letterOverlayEnabled = localStorage.getItem("letterOverlay") !== "false";
+let _punctuationEnabled = localStorage.getItem("punctuation") === "true";
 let _presetMode = false;
 let _presetWordGaps = null;
 let _presetTextEnabled = localStorage.getItem("presetTextEnabled") === "true";
@@ -703,6 +704,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Punctuation toggle
+  var punctuationToggle = document.getElementById("punctuationToggle");
+  if (punctuationToggle) {
+    punctuationToggle.textContent = _punctuationEnabled ? "On" : "Off";
+    punctuationToggle.addEventListener("click", function () {
+      _punctuationEnabled = !_punctuationEnabled;
+      localStorage.setItem("punctuation", _punctuationEnabled);
+      punctuationToggle.textContent = _punctuationEnabled ? "On" : "Off";
+    });
+  }
+
   // Wire Simon input decoder to keyer hooks (already called via initSimonInputWiring above)
 });
 
@@ -911,7 +923,7 @@ async function startGame() {
     _presetWordGaps = parsed.wordGaps;
     _presetTextIndex = 0;
     _presetMode = true;
-    _simonState = SimonGame.createState();
+    _simonState = SimonGame.createState({ includePunctuation: _punctuationEnabled });
     if (_simonDecoder) _simonDecoder.reset();
     _advancePresetRound(_simonState);
     showPresetProgress();
@@ -922,7 +934,7 @@ async function startGame() {
 
   _presetMode = false;
   hidePresetProgress();
-  _simonState = SimonGame.createState();
+  _simonState = SimonGame.createState({ includePunctuation: _punctuationEnabled });
   if (_simonDecoder) _simonDecoder.reset();
   SimonGame.advanceRound(_simonState);
 

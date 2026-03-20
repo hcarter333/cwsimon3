@@ -29,6 +29,16 @@ var SimonGame = (function () {
   // Characters available for the chooser (keys of MORSE_TABLE)
   var CHARSET = Object.keys(MORSE_TABLE);
 
+  // Punctuation characters — subset of CHARSET
+  var PUNCTUATION = { ".":1, ",":1, "?":1, "=":1, "-":1, "/":1,
+                      "!":1, "'":1, "(":1, ")":1, ":":1, ";":1,
+                      "\"":1, "@":1 };
+
+  // Alphanumeric-only charset (letters + digits, no punctuation)
+  var ALPHA_NUM_CHARSET = CHARSET.filter(function (ch) {
+    return !PUNCTUATION[ch];
+  });
+
   // ── Reverse lookup: morse pattern → character ─────────────────────
   var REVERSE_TABLE = {};
   CHARSET.forEach(function (ch) {
@@ -47,13 +57,15 @@ var SimonGame = (function () {
    */
   function createState(opts) {
     opts = opts || {};
+    var pool = opts.includePunctuation === false ? ALPHA_NUM_CHARSET : CHARSET;
     return {
       sequence: [],          // accumulated letters the game has chosen
       round: 0,              // current round (0-indexed; incremented after successful match)
       inputBuffer: [],       // user's accumulated dit/dah elements for the current letter
       inputIndex: 0,         // which letter in the sequence the user is currently entering
       finished: false,       // true once the user has failed
-      randomFn: opts.randomFn || Math.random
+      randomFn: opts.randomFn || Math.random,
+      charset: pool          // character pool for random selection
     };
   }
 
@@ -67,8 +79,9 @@ var SimonGame = (function () {
    * @returns {string[]} The full sequence for this round (copy).
    */
   function advanceRound(state) {
-    var idx = Math.floor(state.randomFn() * CHARSET.length);
-    var ch = CHARSET[idx];
+    var pool = state.charset || CHARSET;
+    var idx = Math.floor(state.randomFn() * pool.length);
+    var ch = pool[idx];
     state.sequence.push(ch);
     state.round = state.sequence.length;
     state.inputBuffer = [];
@@ -299,6 +312,8 @@ var SimonGame = (function () {
     MORSE_TABLE: MORSE_TABLE,
     REVERSE_TABLE: REVERSE_TABLE,
     CHARSET: CHARSET,
+    ALPHA_NUM_CHARSET: ALPHA_NUM_CHARSET,
+    PUNCTUATION: PUNCTUATION,
     Result: Result,
 
     createState: createState,
