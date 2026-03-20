@@ -34,6 +34,9 @@ let _txHapticsEnabled = localStorage.getItem("txHaptics") === "true";
 let _letterOverlayEnabled = localStorage.getItem("letterOverlay") !== "false";
 let _presetMode = false;
 let _presetWordGaps = null;
+let _presetTextEnabled = localStorage.getItem("presetTextEnabled") === "true";
+let _presetTextIndex = 0;
+let _presetParsedChars = null;
 const DEFAULT_RAVEN_TEXT =
   "Once upon a midnight dreary while I pondered weak and weary\n" +
   "Over many a quaint and curious volume of forgotten lore\n" +
@@ -603,9 +606,13 @@ document.addEventListener("DOMContentLoaded", () => {
     startGameButton.addEventListener("click", startGame);
   }
 
-  var presetTextBtn = document.getElementById("presetTextBtn");
-  if (presetTextBtn) {
-    presetTextBtn.addEventListener("click", startPresetText);
+  var presetTextToggle = document.getElementById("presetTextToggle");
+  if (presetTextToggle) {
+    presetTextToggle.checked = _presetTextEnabled;
+    presetTextToggle.addEventListener("change", function () {
+      _presetTextEnabled = presetTextToggle.checked;
+      localStorage.setItem("presetTextEnabled", _presetTextEnabled);
+    });
   }
 
   var presetTextArea = document.getElementById("presetTextArea");
@@ -735,10 +742,8 @@ function initSimonInputWiring() {
         onGameLose();
       } else if (result === SimonGame.Result.ROUND_COMPLETE) {
         onRoundComplete();
-      } else if (result === SimonGame.Result.LETTER_CORRECT && _presetMode) {
-        playPresetChar();
       }
-      // LETTER_CORRECT in Simon mode → wait for next letter
+      // LETTER_CORRECT → wait for next letter in sequence
     }
   });
 
@@ -765,17 +770,16 @@ async function onGameLose() {
   }
 
   if (_presetMode) {
-    var matched = _simonState ? _simonState.inputIndex : 0;
-    var total = _simonState ? _simonState.sequence.length : 0;
+    var score = _simonState ? Math.max(0, _simonState.round - 1) : 0;
 
     var modal = document.getElementById("loseModal");
     if (!modal) return;
 
     var scoreEl = document.getElementById("loseRoundsCount");
-    if (scoreEl) scoreEl.textContent = matched + " of " + total;
+    if (scoreEl) scoreEl.textContent = score + " rounds (text pos " + _presetTextIndex + "/" + (_presetParsedChars ? _presetParsedChars.length : 0) + ")";
 
     var progressMsg = document.getElementById("loseProgressMsg");
-    if (progressMsg) progressMsg.textContent = "Keep practicing! Quoth the Raven...";
+    if (progressMsg) progressMsg.textContent = "Keep practicing!";
 
     var progressSeq = document.getElementById("loseProgressSeq");
     if (progressSeq) progressSeq.textContent = "";
@@ -839,11 +843,7 @@ function hideLoseModal() {
 
 function restartGame() {
   hideLoseModal();
-  if (_presetMode) {
-    startPresetText();
-  } else {
-    startGame();
-  }
+  startGame();
 }
 
 function cancelToMenu() {
@@ -851,6 +851,7 @@ function cancelToMenu() {
   hidePresetProgress();
   _simonState = null;
   _presetMode = false;
+  _presetParsedChars = null;
 }
 
 // === Simon Game Orchestration =============================================
@@ -902,6 +903,23 @@ async function startGame() {
   if (morsePlaybackActive) return;
 
   await ensureAudioReady();
+
+  if (_presetTextEnabled) {
+    var parsed = parsePresetText(getPresetText());
+    if (parsed.chars.length === 0) return;
+    _presetParsedChars = parsed.chars;
+    _presetWordGaps = parsed.wordGaps;
+    _presetTextIndex = 0;
+    _presetMode = true;
+    _simonState = SimonGame.createState();
+    if (_simonDecoder) _simonDecoder.reset();
+    _advancePresetRound(_simonState);
+    showPresetProgress();
+    updatePresetProgress();
+    await playRound();
+    return;
+  }
+
   _presetMode = false;
   hidePresetProgress();
   _simonState = SimonGame.createState();
@@ -942,11 +960,32 @@ async function playRound() {
  */
 function onRoundComplete() {
   if (_presetMode) {
-    onPresetComplete();
+    if (_presetTextIndex >= _presetParsedChars.length) {
+      // Reached end of preset text — restart from beginning, reset sequence to length 1
+      _presetTextIndex = 0;
+      _simonState.sequence = [];
+      _simonState.round = 0;
+    }
+    _advancePresetRound(_simonState);
+    updatePresetProgress();
+    playRound();
     return;
   }
   SimonGame.advanceRound(_simonState);
   playRound();
+}
+
+/**
+ * Advance a preset-text round: pick the next sequential character
+ * from the parsed preset text and append it to the game sequence.
+ */
+function _advancePresetRound(state) {
+  var ch = _presetParsedChars[_presetTextIndex];
+  _presetTextIndex++;
+  state.sequence.push(ch);
+  state.round = state.sequence.length;
+  state.inputBuffer = [];
+  state.inputIndex = 0;
 }
 
 // === Preset Text Practice ===================================================
@@ -1083,11 +1122,17 @@ function updatePresetProgress() {
   var el = document.getElementById("presetProgress");
   if (!el || !_simonState) return;
 
-  var current = _simonState.inputIndex + 1;
-  var total = _simonState.sequence.length;
-  var ch = _simonState.sequence[_simonState.inputIndex] || "";
-
-  el.textContent = current + " / " + total + "  \u00b7  next: " + ch;
+  if (_presetParsedChars) {
+    var textPos = _presetTextIndex;
+    var textTotal = _presetParsedChars.length;
+    var seqLen = _simonState.sequence.length;
+    el.textContent = "Text: " + textPos + "/" + textTotal + "  \u00b7  Round length: " + seqLen;
+  } else {
+    var current = _simonState.inputIndex + 1;
+    var total = _simonState.sequence.length;
+    var ch = _simonState.sequence[_simonState.inputIndex] || "";
+    el.textContent = current + " / " + total + "  \u00b7  next: " + ch;
+  }
 }
 
 function showPresetProgress() {
