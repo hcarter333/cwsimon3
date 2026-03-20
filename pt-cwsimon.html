@@ -247,6 +247,105 @@
       #loseCancelBtn {
         margin-left: 1rem;
       }
+
+      #presetTextBtn {
+        margin-top: 0.8rem;
+        background: #1a0a2e;
+        color: #c9a0dc;
+        border: 2px solid #6b3fa0;
+        border-radius: 8px;
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      .preset-text-section {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #333;
+      }
+
+      .preset-text-section h3 {
+        margin: 0 0 0.5rem;
+        font-size: 1.1rem;
+        color: #c9a0dc;
+      }
+
+      .preset-text-section p {
+        font-size: 0.85rem;
+        color: #999;
+        margin: 0 0 0.5rem;
+      }
+
+      .preset-text-section textarea {
+        width: 100%;
+        min-height: 100px;
+        background: #1a0a2e;
+        color: #e0d0f0;
+        border: 1px solid #6b3fa0;
+        border-radius: 6px;
+        padding: 0.5rem;
+        font-family: sans-serif;
+        font-size: 0.9rem;
+        resize: vertical;
+        box-sizing: border-box;
+      }
+
+      #presetProgress {
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 1rem;
+        color: #c9a0dc;
+        background: rgba(26, 10, 46, 0.95);
+        padding: 0.4rem 0.5rem;
+        z-index: 9997;
+        display: none;
+      }
+
+      #presetProgress.visible {
+        display: block;
+      }
+
+      #ravenAd {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10003;
+        background: rgba(10, 0, 20, 0.95);
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        text-align: center;
+        color: #c9a0dc;
+      }
+
+      #ravenAd.visible {
+        display: flex;
+      }
+
+      #ravenAd .raven-title {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      #ravenAd .raven-quote {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #fff;
+        margin-bottom: 0.5rem;
+      }
+
+      #ravenAd .raven-wpm {
+        font-size: 0.8rem;
+        color: #666;
+      }
     </style>
   </head>
   <body>
@@ -259,6 +358,7 @@
       <h2>Project TouCans CWSimon</h2>
       <p>Use the virtual paddle (1/3) as an iambic keyer (dit/dah.)</p>
       <button id="startGameButton" type="button">Start Game</button>
+      <button id="presetTextBtn" type="button">Practice Text</button>
     </div>
 
     <div>
@@ -283,6 +383,14 @@
         <button id="loseRestartBtn" type="button">Play Again?</button>
         <button id="loseCancelBtn" type="button">Back to Menu</button>
       </div>
+    </div>
+
+    <div id="presetProgress"></div>
+
+    <div id="ravenAd">
+      <div class="raven-title">Quoth the Raven</div>
+      <div class="raven-quote">Nevermore</div>
+      <div class="raven-wpm">Listening at 24 WPM</div>
     </div>
 
     <div id="console" class="console"></div>
@@ -331,6 +439,12 @@
           <div class="ctrl-group">
             <button id="letterOverlayToggle" type="button" aria-label="Toggle letter overlay">On</button>
           </div>
+        </div>
+
+        <div class="preset-text-section">
+          <h3>Text Practice</h3>
+          <p>Practice Morse with poems or custom text. Default: The Raven by E.A. Poe</p>
+          <textarea id="presetTextArea" aria-label="Preset text for practice"></textarea>
         </div>
       </div>
     </div>

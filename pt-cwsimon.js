@@ -32,6 +32,15 @@ let loseSoundMuted = false;
 let _losingSequence = "";
 let _txHapticsEnabled = localStorage.getItem("txHaptics") === "true";
 let _letterOverlayEnabled = localStorage.getItem("letterOverlay") !== "false";
+let _presetMode = false;
+let _presetWordGaps = null;
+const DEFAULT_RAVEN_TEXT =
+  "Once upon a midnight dreary while I pondered weak and weary\n" +
+  "Over many a quaint and curious volume of forgotten lore\n" +
+  "While I nodded nearly napping suddenly there came a tapping\n" +
+  "As of some one gently rapping rapping at my chamber door\n" +
+  "Tis some visitor I muttered tapping at my chamber door\n" +
+  "Only this and nothing more";
 
 async function ensureAudioReady() {
   if (!note_context) {
@@ -594,6 +603,19 @@ document.addEventListener("DOMContentLoaded", () => {
     startGameButton.addEventListener("click", startGame);
   }
 
+  var presetTextBtn = document.getElementById("presetTextBtn");
+  if (presetTextBtn) {
+    presetTextBtn.addEventListener("click", startPresetText);
+  }
+
+  var presetTextArea = document.getElementById("presetTextArea");
+  if (presetTextArea) {
+    presetTextArea.value = localStorage.getItem("presetText") || DEFAULT_RAVEN_TEXT;
+    presetTextArea.addEventListener("input", function () {
+      localStorage.setItem("presetText", presetTextArea.value);
+    });
+  }
+
   // Wire up Simon input decoder and lose-flow restart
   initSimonInputWiring();
 
@@ -713,8 +735,10 @@ function initSimonInputWiring() {
         onGameLose();
       } else if (result === SimonGame.Result.ROUND_COMPLETE) {
         onRoundComplete();
+      } else if (result === SimonGame.Result.LETTER_CORRECT && _presetMode) {
+        playPresetChar();
       }
-      // LETTER_CORRECT → wait for next letter
+      // LETTER_CORRECT in Simon mode → wait for next letter
     }
   });
 
@@ -732,13 +756,35 @@ async function onGameLose() {
   morsePlaybackActive = false;
   stopSidetone();
 
-  var score = SimonGame.getScore(_simonState);
+  if (_presetMode) {
+    hidePresetProgress();
+  }
 
   if (!loseSoundMuted) {
     await playLoseSound();
   }
 
-  showLoseModal(score);
+  if (_presetMode) {
+    var matched = _simonState ? _simonState.inputIndex : 0;
+    var total = _simonState ? _simonState.sequence.length : 0;
+
+    var modal = document.getElementById("loseModal");
+    if (!modal) return;
+
+    var scoreEl = document.getElementById("loseRoundsCount");
+    if (scoreEl) scoreEl.textContent = matched + " of " + total;
+
+    var progressMsg = document.getElementById("loseProgressMsg");
+    if (progressMsg) progressMsg.textContent = "Keep practicing! Quoth the Raven...";
+
+    var progressSeq = document.getElementById("loseProgressSeq");
+    if (progressSeq) progressSeq.textContent = "";
+
+    modal.classList.add("visible");
+  } else {
+    var score = SimonGame.getScore(_simonState);
+    showLoseModal(score);
+  }
 }
 
 /**
@@ -793,12 +839,18 @@ function hideLoseModal() {
 
 function restartGame() {
   hideLoseModal();
-  startGame();
+  if (_presetMode) {
+    startPresetText();
+  } else {
+    startGame();
+  }
 }
 
 function cancelToMenu() {
   hideLoseModal();
+  hidePresetProgress();
   _simonState = null;
+  _presetMode = false;
 }
 
 // === Simon Game Orchestration =============================================
@@ -850,6 +902,8 @@ async function startGame() {
   if (morsePlaybackActive) return;
 
   await ensureAudioReady();
+  _presetMode = false;
+  hidePresetProgress();
   _simonState = SimonGame.createState();
   if (_simonDecoder) _simonDecoder.reset();
   SimonGame.advanceRound(_simonState);
@@ -887,8 +941,163 @@ async function playRound() {
  * Appends a new random symbol and plays the next round.
  */
 function onRoundComplete() {
+  if (_presetMode) {
+    onPresetComplete();
+    return;
+  }
   SimonGame.advanceRound(_simonState);
   playRound();
+}
+
+// === Preset Text Practice ===================================================
+
+function parsePresetText(text) {
+  var upper = text.toUpperCase();
+  var chars = [];
+  var wordGaps = new Set();
+  var afterSpace = false;
+
+  for (var i = 0; i < upper.length; i++) {
+    var ch = upper[i];
+    if (ch === " " || ch === "\n") {
+      afterSpace = true;
+    } else if (SimonGame.MORSE_TABLE[ch]) {
+      if (afterSpace && chars.length > 0) {
+        wordGaps.add(chars.length);
+      }
+      chars.push(ch);
+      afterSpace = false;
+    }
+  }
+
+  return { chars: chars, wordGaps: wordGaps };
+}
+
+function getPresetText() {
+  var textarea = document.getElementById("presetTextArea");
+  if (textarea && textarea.value.trim()) {
+    return textarea.value.trim();
+  }
+  return DEFAULT_RAVEN_TEXT;
+}
+
+async function startPresetText() {
+  if (morsePlaybackActive) return;
+  await ensureAudioReady();
+
+  var parsed = parsePresetText(getPresetText());
+  if (parsed.chars.length === 0) return;
+
+  _presetMode = true;
+  _presetWordGaps = parsed.wordGaps;
+
+  _simonState = {
+    sequence: parsed.chars,
+    round: 1,
+    inputBuffer: [],
+    inputIndex: 0,
+    finished: false,
+    randomFn: Math.random
+  };
+
+  if (_simonDecoder) _simonDecoder.reset();
+
+  updatePresetProgress();
+  showPresetProgress();
+
+  await playRavenAd();
+  await playPresetChar();
+}
+
+async function playPresetChar() {
+  if (!_simonState || _simonState.inputIndex >= _simonState.sequence.length) {
+    onPresetComplete();
+    return;
+  }
+
+  await sleep(400);
+  morsePlaybackActive = true;
+  setInputCaptureMode(false);
+
+  try {
+    if (_presetWordGaps && _presetWordGaps.has(_simonState.inputIndex)) {
+      await sleep(WORD_GAP_MS);
+    }
+    var ch = _simonState.sequence[_simonState.inputIndex];
+    await playMorseSequence([ch]);
+  } finally {
+    morsePlaybackActive = false;
+    stopSidetone();
+  }
+
+  if (_simonDecoder) _simonDecoder.reset();
+  setInputCaptureMode(true);
+  updatePresetProgress();
+}
+
+async function playRavenAd() {
+  var adEl = document.getElementById("ravenAd");
+  if (adEl) adEl.classList.add("visible");
+
+  var savedUnit = UNIT_MS;
+  var savedGap = WORD_GAP_MS;
+  UNIT_MS = 50;
+  WORD_GAP_MS = 350;
+
+  morsePlaybackActive = true;
+  try {
+    await sendMorseMessage(null, "QUOTH THE RAVEN NEVERMORE");
+  } finally {
+    morsePlaybackActive = false;
+    stopSidetone();
+    UNIT_MS = savedUnit;
+    WORD_GAP_MS = savedGap;
+  }
+
+  await sleep(500);
+  if (adEl) adEl.classList.remove("visible");
+}
+
+function onPresetComplete() {
+  setInputCaptureMode(false);
+  hidePresetProgress();
+
+  var total = _simonState ? _simonState.sequence.length : 0;
+
+  var modal = document.getElementById("loseModal");
+  if (!modal) return;
+
+  var scoreEl = document.getElementById("loseRoundsCount");
+  if (scoreEl) scoreEl.textContent = total;
+
+  var progressMsg = document.getElementById("loseProgressMsg");
+  if (progressMsg) progressMsg.textContent = "Nevermore! You copied the full text!";
+
+  var progressSeq = document.getElementById("loseProgressSeq");
+  if (progressSeq) progressSeq.textContent = total + " characters complete";
+
+  modal.classList.add("visible");
+}
+
+function updatePresetProgress() {
+  var el = document.getElementById("presetProgress");
+  if (!el || !_simonState) return;
+
+  var current = _simonState.inputIndex + 1;
+  var total = _simonState.sequence.length;
+  var ch = _simonState.sequence[_simonState.inputIndex] || "";
+
+  el.textContent = current + " / " + total + "  \u00b7  next: " + ch;
+}
+
+function showPresetProgress() {
+  var el = document.getElementById("presetProgress");
+  if (el) el.classList.add("visible");
+}
+
+function hidePresetProgress() {
+  var el = document.getElementById("presetProgress");
+  if (el) el.classList.remove("visible");
 }
 
 // === Keyer Event Hooks ===
