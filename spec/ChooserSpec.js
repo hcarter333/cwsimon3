@@ -10,9 +10,12 @@ describe("Chooser (advanceRound character selection)", function () {
     });
   });
 
-  it("CHARSET contains all 26 letters and 10 digits", function () {
-    expect(SimonGame.CHARSET.length).toBe(36);
+  it("CHARSET contains all 26 letters, 10 digits, and punctuation", function () {
+    expect(SimonGame.CHARSET.length).toBe(50);
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split("").forEach(function (ch) {
+      expect(SimonGame.CHARSET).toContain(ch);
+    });
+    ".,?=-/!'():;\"@".split("").forEach(function (ch) {
       expect(SimonGame.CHARSET).toContain(ch);
     });
   });
@@ -36,7 +39,7 @@ describe("Chooser (advanceRound character selection)", function () {
       return function () {
         var ch = chars[i % chars.length];
         i++;
-        return charset.indexOf(ch) / charset.length;
+        return (charset.indexOf(ch) + 0.5) / charset.length;
       };
     }
 

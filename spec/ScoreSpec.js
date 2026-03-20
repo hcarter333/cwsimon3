@@ -5,7 +5,7 @@ describe("Score", function () {
     return function () {
       var ch = chars[i % chars.length];
       i++;
-      return charset.indexOf(ch) / charset.length;
+      return (charset.indexOf(ch) + 0.5) / charset.length;
     };
   }
 

@@ -122,7 +122,7 @@ describe("Input Decoder", function () {
       return function () {
         var ch = chars[i % chars.length];
         i++;
-        return charset.indexOf(ch) / charset.length;
+        return (charset.indexOf(ch) + 0.5) / charset.length;
       };
     }
 
@@ -216,7 +216,7 @@ describe("Input Decoder", function () {
     });
 
     it("encodeMorse returns null for unknown character", function () {
-      expect(SimonGame.encodeMorse("!")).toBeNull();
+      expect(SimonGame.encodeMorse("~")).toBeNull();
     });
 
     it("decodeMorse returns correct character", function () {

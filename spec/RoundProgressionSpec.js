@@ -7,7 +7,7 @@ describe("Round progression", function () {
       var ch = chars[i % chars.length];
       i++;
       var idx = charset.indexOf(ch);
-      return idx / charset.length;
+      return (idx + 0.5) / charset.length;
     };
   }
 
