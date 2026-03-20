@@ -974,9 +974,9 @@ function onRoundComplete() {
   if (_presetMode) {
     if (_presetTextIndex >= _presetParsedChars.length) {
       // Reached end of preset text — restart from beginning, reset sequence to length 1
+      // Keep round counter progressing across text cycles (don't reset to 0)
       _presetTextIndex = 0;
       _simonState.sequence = [];
-      _simonState.round = 0;
     }
     _advancePresetRound(_simonState);
     updatePresetProgress();
@@ -995,7 +995,7 @@ function _advancePresetRound(state) {
   var ch = _presetParsedChars[_presetTextIndex];
   _presetTextIndex++;
   state.sequence.push(ch);
-  state.round = state.sequence.length;
+  state.round++;
   state.inputBuffer = [];
   state.inputIndex = 0;
 }
