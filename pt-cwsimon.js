@@ -331,6 +331,7 @@ function adduiEls(divStr, type = "generic") {
   const playSequenceButton = document.createElement("button");
   playSequenceButton.id = "playSequenceButton";
   playSequenceButton.innerText = "Play Key";
+  playSequenceButton.style.display = "none";
   playSequenceButton.addEventListener("click", () => playKeySequence(cwmsg));
   buttonDiv.appendChild(playSequenceButton);
 
