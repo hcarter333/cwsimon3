@@ -23,6 +23,8 @@ const IDLE_RESET_MS = 640;
 
 let serialPort = null;
 let prevCTS = null;
+let prevDCD = null;
+let halikeyPaddleLock = null; // "dit" or "dah" when a paddle is held
 let lastElementTouched = null;
 let morsePlaybackActive = false;
 let currentWpm = 8;
@@ -87,6 +89,8 @@ async function connectToSerialPort() {
     await serialPort.open({ baudRate: 9600 });
     const signals = await serialPort.getSignals();
     prevCTS = signals.clearToSend;
+    prevDCD = signals.dataCarrierDetect;
+    halikeyPaddleLock = null;
     listenToSerialPort();
   } catch (error) {
     serialPort = null;
@@ -100,14 +104,44 @@ async function listenToSerialPort() {
   while (serialPort.readable) {
     const signals = await serialPort.getSignals();
     const currentCTS = signals.clearToSend;
+    const currentDCD = signals.dataCarrierDetect;
+
+    // CTS → Zone 1 (dit paddle)
     if (currentCTS !== prevCTS) {
       if (currentCTS) {
-        keyPress();
+        if (!halikeyPaddleLock) {
+          halikeyPaddleLock = "dit";
+          const el = document.getElementById("1");
+          if (el) enter(el);
+        }
       } else {
-        keyRelease();
+        if (halikeyPaddleLock === "dit") {
+          halikeyPaddleLock = null;
+          const el = document.getElementById("1");
+          if (el) leave(el);
+        }
       }
       prevCTS = currentCTS;
     }
+
+    // DCD → Zone 3 (dah paddle)
+    if (currentDCD !== prevDCD) {
+      if (currentDCD) {
+        if (!halikeyPaddleLock) {
+          halikeyPaddleLock = "dah";
+          const el = document.getElementById("3");
+          if (el) enter(el);
+        }
+      } else {
+        if (halikeyPaddleLock === "dah") {
+          halikeyPaddleLock = null;
+          const el = document.getElementById("3");
+          if (el) leave(el);
+        }
+      }
+      prevDCD = currentDCD;
+    }
+
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
 }
