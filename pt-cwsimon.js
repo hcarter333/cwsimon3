@@ -321,7 +321,6 @@ function adduiEls(divStr, type = "generic") {
   const halikeyButton = document.createElement("button");
   halikeyButton.id = "startHalikey";
   halikeyButton.innerText = "Start Hk";
-  halikeyButton.style.display = "none";
   buttonDiv.appendChild(halikeyButton);
 
   const generateButton = document.createElement("button");
